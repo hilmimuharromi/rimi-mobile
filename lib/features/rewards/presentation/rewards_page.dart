@@ -1,216 +1,416 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
-import '../../auth/providers/auth_provider.dart';
 
 class RewardsPage extends ConsumerWidget {
   const RewardsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
-    final points = 0;
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: RimiColors.background,
-        appBar: AppBar(
-          title: const Text('Poinku & Rewards'),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
         ),
-        body: Column(
-          children: [
-            // Points card
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
+        title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // ---- Points balance card ----
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Container(
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [RimiColors.tertiary, Color(0xFFFFD97A)],
+                  colors: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: RimiColors.tertiaryDark.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  const Text('⭐', style: TextStyle(fontSize: 44)),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$points',
-                    style: RimiTypography.displayLarge.copyWith(
-                      color: RimiColors.black,
-                      fontWeight: FontWeight.w800,
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.gps_fixed_rounded, color: RimiColors.tertiaryDark, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('TOTAL SALDO POIN',
+                            style: RimiTypography.labelSmall.copyWith(
+                                color: RimiColors.tertiaryDark, fontWeight: FontWeight.w700, letterSpacing: 0.5, fontSize: 11)),
+                        const SizedBox(height: 4),
+                        Text('125.000 Poin',
+                            style: RimiTypography.headlineMedium.copyWith(
+                                color: RimiColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 22)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text('Estimasi: Rp 12.500',
+                              style: RimiTypography.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    'Poin Saya',
-                    style: RimiTypography.bodyMedium.copyWith(
-                      color: RimiColors.black.withValues(alpha: 0.7),
-                    ),
-                  ),
+                  const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFE5A830)),
                 ],
               ),
             ),
-            // Tabs
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: RimiColors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const TabBar(
-                labelColor: RimiColors.primaryDeep,
-                unselectedLabelColor: RimiColors.neutralMuted,
-                indicatorColor: RimiColors.primaryDeep,
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                tabs: [
-                  Tab(text: 'Katalog Hadiah'),
-                  Tab(text: 'Riwayat Tukar'),
-                ],
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _CatalogTab(),
-                  _HistoryTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          ),
 
-class _CatalogTab extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final api = ref.watch(apiClientProvider);
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loadCatalog(api),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final items = snapshot.data ?? [];
-        if (items.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          // ---- Tukar Voucher ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
               children: [
-                const Icon(Icons.card_giftcard_rounded, size: 64, color: RimiColors.neutralMuted),
-                const SizedBox(height: 16),
-                Text('Belum ada reward', style: RimiTypography.titleMedium),
-                Text('Kumpulkan poin dulu ya!', style: RimiTypography.bodyMedium),
+                Expanded(
+                    child: Text('Tukar Voucher',
+                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                Text('Lihat Semua',
+                    style: RimiTypography.labelMedium.copyWith(color: RimiColors.primary, fontWeight: FontWeight.w700)),
               ],
             ),
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => _RewardTile(data: items[i]),
-        );
-      },
-    );
-  }
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 92,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: const [
+                _VoucherCard(
+                  icon: Icons.local_shipping_rounded,
+                  iconBg: Color(0xFFCFF0E8),
+                  iconColor: RimiColors.primaryDeep,
+                  label: 'Diskon Ongkir',
+                  points: '5.000 Poin',
+                ),
+                SizedBox(width: 12),
+                _VoucherCard(
+                  icon: Icons.card_giftcard_rounded,
+                  iconBg: Color(0xFFFFE59D),
+                  iconColor: RimiColors.tertiaryDark,
+                  label: 'Potongan',
+                  points: '10.000 Poin',
+                ),
+                SizedBox(width: 12),
+                _VoucherCard(
+                  icon: Icons.percent_rounded,
+                  iconBg: Color(0xFFFDCFB0),
+                  iconColor: RimiColors.secondary,
+                  label: 'Cashback 5%',
+                  points: '3.000 Poin',
+                ),
+              ],
+            ),
+          ),
 
-  Future<List<Map<String, dynamic>>> _loadCatalog(ApiClient api) async {
-    try {
-      final result = await api.getRedemptionCatalog();
-      if (result is List) {
-        return result.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-}
+          const SizedBox(height: 24),
 
-class _HistoryTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.history_rounded, size: 64, color: RimiColors.neutralMuted),
-          const SizedBox(height: 16),
-          Text('Belum ada riwayat', style: RimiTypography.titleMedium),
+          // ---- Hadiah Utama ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                    child: Text('Hadiah Utama',
+                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDDF1E5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('REWARD RESELLER AKTIF',
+                      style: RimiTypography.labelSmall.copyWith(
+                          color: const Color(0xFF2D6A4F), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _PrizeCard(
+                    icon: Icons.electric_moped_rounded,
+                    badge: 'BEST VALUE',
+                    badgeColor: Color(0xFF2D6A4F),
+                    name: 'Motor Listrik',
+                    price: '2.5M Poin',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _PrizeCard(
+                    icon: Icons.mosque_rounded,
+                    badge: 'SPIRITUAL',
+                    badgeColor: Color(0xFF8B0000),
+                    name: 'Paket Umroh',
+                    price: '5M Poin',
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ---- Riwayat Poin ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                    child: Text('Riwayat Poin',
+                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                const Icon(Icons.tune_rounded, size: 20, color: RimiColors.neutral),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const _HistoryTile(
+            icon: Icons.shopping_bag_outlined,
+            iconBg: Color(0xFFF5EAD6),
+            iconColor: Color(0xFFB5883A),
+            title: 'Belanja - INV/2023/102',
+            date: '12 Okt 2023 • 14:20',
+            amount: '+1.250',
+            positive: true,
+          ),
+          const _HistoryTile(
+            icon: Icons.card_giftcard_rounded,
+            iconBg: Color(0xFFFCE4EC),
+            iconColor: Color(0xFFE91E63),
+            title: 'Tukar - Voucher Ongkir',
+            date: '10 Okt 2023 • 09:15',
+            amount: '-5.000',
+            positive: false,
+          ),
+          const _HistoryTile(
+            icon: Icons.person_add_rounded,
+            iconBg: Color(0xFFF5F5F5),
+            iconColor: Color(0xFF757575),
+            title: 'Bonus Referral - Andi S.',
+            date: '08 Okt 2023 • 18:45',
+            amount: '+5.000',
+            positive: true,
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 }
 
-class _RewardTile extends StatelessWidget {
-  const _RewardTile({required this.data});
-  final Map<String, dynamic> data;
+class _VoucherCard extends StatelessWidget {
+  const _VoucherCard({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.label,
+    required this.points,
+  });
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String label;
+  final String points;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: 150,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: RimiColors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: RimiColors.border),
       ),
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: RimiColors.tertiary.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.emoji_events_rounded, color: RimiColors.tertiaryDark),
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(data['name']?.toString() ?? '', style: RimiTypography.titleSmall),
+                Text(label,
+                    style: RimiTypography.labelMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 12),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(points,
+                    style: RimiTypography.labelSmall
+                        .copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700, fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrizeCard extends StatelessWidget {
+  const _PrizeCard({
+    required this.icon,
+    required this.badge,
+    required this.badgeColor,
+    required this.name,
+    required this.price,
+  });
+  final IconData icon;
+  final String badge;
+  final Color badgeColor;
+  final String name;
+  final String price;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: RimiColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            children: [
+              Container(
+                height: 100,
+                color: const Color(0xFFF7F7F7),
+                child: Center(child: Icon(icon, size: 56, color: RimiColors.neutralSoft)),
+              ),
+              Positioned(
+                top: 8, left: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: const BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10)),
+                  ),
+                  child: Text(badge,
+                      style: RimiTypography.labelSmall
+                          .copyWith(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
                 const SizedBox(height: 4),
-                Text(
-                  '${data['points_cost'] ?? '?'} poin',
-                  style: RimiTypography.bodySmall.copyWith(
-                    color: RimiColors.primaryDeep,
-                    fontWeight: FontWeight.w600,
+                Text(price,
+                    style: RimiTypography.labelMedium.copyWith(color: RimiColors.primaryDeep, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFF5F5F5),
+                      disabledBackgroundColor: const Color(0xFFF5F5F5),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Text('Belum Cukup',
+                        style: RimiTypography.labelMedium
+                            .copyWith(color: RimiColors.neutralSoft, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
             ),
           ),
-          FilledButton(
-            onPressed: () {},
-            style: FilledButton.styleFrom(
-              backgroundColor: RimiColors.primaryDeep,
-              minimumSize: const Size(72, 40),
-              textStyle: RimiTypography.labelMedium,
-            ),
-            child: const Text('Tukar'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryTile extends StatelessWidget {
+  const _HistoryTile({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.date,
+    required this.amount,
+    required this.positive,
+  });
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String date;
+  final String amount;
+  final bool positive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
+                const SizedBox(height: 2),
+                Text(date, style: RimiTypography.bodySmall.copyWith(fontSize: 11)),
+              ],
+            ),
+          ),
+          Text(amount,
+              style: RimiTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: positive ? const Color(0xFF2D6A4F) : const Color(0xFFE53935))),
         ],
       ),
     );

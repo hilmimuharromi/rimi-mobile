@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
-import '../../../shared/models/user.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class ReferralPage extends ConsumerWidget {
@@ -13,138 +12,370 @@ class ReferralPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
-    final code = auth.user?.referralCode ?? '—';
+    final code = auth.user?.referralCode ?? 'RIMI-SAYANG-IBU';
 
     return Scaffold(
-      backgroundColor: RimiColors.background,
-      appBar: AppBar(title: const Text('Ajak Teman')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Hero
-            Container(
-              padding: const EdgeInsets.all(28),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
+        ),
+        title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // ---- Hero card ----
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Container(
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [RimiColors.secondary, RimiColors.secondaryDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                children: [
-                  const Text('🤝', style: TextStyle(fontSize: 52)),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Dapat 5.000 poin',
-                    style: RimiTypography.headlineLarge.copyWith(color: RimiColors.white),
-                  ),
-                  Text(
-                    'untuk tiap teman yang belanja',
-                    style: RimiTypography.bodyMedium.copyWith(
-                      color: RimiColors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text('Kode Referral Kamu', style: RimiTypography.titleMedium),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(
-                color: RimiColors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: RimiColors.border),
+                color: const Color(0xFFBFE3FF),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      code,
-                      style: RimiTypography.headlineLarge.copyWith(
-                        color: RimiColors.primaryDeep,
-                        letterSpacing: 2,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Untung Bareng Sahabat!',
+                            style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Ajak teman belanja, kalian berdua dapat cashback poin melimpah!',
+                          style: RimiTypography.bodyMedium.copyWith(color: RimiColors.textPrimary),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('📋 Kode disalin')),
-                      );
-                    },
-                    icon: const Icon(Icons.copy_rounded, color: RimiColors.primaryDeep),
+                  const SizedBox(width: 8),
+                  // Si Rimi cloud
+                  Container(
+                    width: 74, height: 74,
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned(top: 22, left: 22, child: _MiniDot()),
+                        Positioned(top: 22, right: 22, child: _MiniDot()),
+                        Positioned(top: 30, left: 18, child: _MiniCheek()),
+                        Positioned(top: 30, right: 18, child: _MiniCheek()),
+                        const Positioned(bottom: 14, child: Text('Si Rimi', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700))),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text('Cara kerja', style: RimiTypography.titleMedium),
-            const SizedBox(height: 12),
-            _Step(icon: Icons.share_rounded, title: 'Bagikan kode referral', subtitle: 'Kirim ke teman via WhatsApp / chat'),
-            const SizedBox(height: 8),
-            _Step(icon: Icons.person_add_rounded, title: 'Teman daftar & belanja', subtitle: 'Teman mendaftar pakai kode kamu'),
-            const SizedBox(height: 8),
-            _Step(icon: Icons.emoji_events_rounded, title: 'Dapat 5.000 poin', subtitle: 'Poin masuk otomatis tiap transaksi'),
-            const SizedBox(height: 24),
-            Text('Daftar downline', style: RimiTypography.titleMedium),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: RimiColors.white,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Text(
-                  'Belum ada downline',
-                  style: RimiTypography.bodyMedium,
+          ),
+
+          // ---- Referral code section ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DottedBorder(
+              color: RimiColors.border,
+              radius: 16,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('KODE REFERRAL KAMU',
+                        style: RimiTypography.labelSmall.copyWith(
+                            color: RimiColors.primaryDeep, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: RimiColors.border),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              code,
+                              style: RimiTypography.headlineMedium.copyWith(
+                                  fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 1),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              await Clipboard.setData(ClipboardData(text: code));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('📋 Kode disalin')),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                Icon(Icons.copy_rounded, size: 16, color: RimiColors.secondary),
+                                const SizedBox(width: 4),
+                                Text('Salin',
+                                    style: RimiTypography.labelMedium
+                                        .copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Bagikan kode ini dan dapatkan 10.000 Poin untuk tiap teman yang bergabung.',
+                      style: RimiTypography.bodySmall.copyWith(color: RimiColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ---- Teman Terundang ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text('Teman Terundang',
+                    style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: RimiColors.secondary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('4 Teman',
+                      style: RimiTypography.labelSmall
+                          .copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _FriendTile(
+            name: 'Amara Khairunnisa',
+            subtitle: 'Bergabung 2 hari',
+            points: '+5.000 Pts',
+            status: 'Berhasil',
+            statusColor: RimiColors.primary,
+          ),
+          const _FriendTile(
+            name: 'Siti Rahmawati',
+            subtitle: 'Bergabung 5 hari',
+            points: '+5.000 Pts',
+            status: 'Berhasil',
+            statusColor: RimiColors.primary,
+          ),
+          const _FriendTile(
+            name: 'Dian Sastro',
+            subtitle: 'Menunggu transaksi pertama',
+            points: '--',
+            status: 'Proses',
+            statusColor: Color(0xFFFF9800),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.add_circle_outline_rounded, size: 18, color: RimiColors.neutralMuted),
+              label: Text('Ajak Lebih Banyak Lagi',
+                  style: RimiTypography.labelMedium.copyWith(color: RimiColors.textSecondary)),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          // ---- Bottom promo card ----
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [RimiColors.secondary, RimiColors.secondaryDark],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Kejar Bonus Poin\nAkhir Bulan!',
+                            style: RimiTypography.headlineSmall
+                                .copyWith(color: Colors.white, fontWeight: FontWeight.w800, height: 1.2)),
+                        const SizedBox(height: 4),
+                        Text('Hingga 50.000 Poin Tambahan',
+                            style: RimiTypography.bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.9))),
+                      ],
+                    ),
+                  ),
+                  Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {},
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        child: Text('Lihat Detail',
+                            style: RimiTypography.labelMedium
+                                .copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 }
 
-class _Step extends StatelessWidget {
-  const _Step({required this.icon, required this.title, required this.subtitle});
-  final IconData icon;
-  final String title;
+class _FriendTile extends StatelessWidget {
+  const _FriendTile({
+    required this.name,
+    required this.subtitle,
+    required this.points,
+    required this.status,
+    required this.statusColor,
+  });
+  final String name;
   final String subtitle;
+  final String points;
+  final String status;
+  final Color statusColor;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: RimiColors.primary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: const BoxDecoration(color: Color(0xFFEDF5FA), shape: BoxShape.circle),
+            child: const Icon(Icons.person_outline_rounded, color: RimiColors.neutral, size: 22),
           ),
-          child: Icon(icon, color: RimiColors.primaryDeep, size: 22),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(subtitle,
+                          style: RimiTypography.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, size: 14, color: RimiColors.neutralMuted),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(title, style: RimiTypography.titleSmall),
+              Text(points,
+                  style: RimiTypography.labelLarge
+                      .copyWith(fontWeight: FontWeight.w800, color: RimiColors.textPrimary)),
               const SizedBox(height: 2),
-              Text(subtitle, style: RimiTypography.bodySmall),
+              Text(status,
+                  style: RimiTypography.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700, fontSize: 11)),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _MiniDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 4, height: 4,
+        decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+      );
+}
+
+class _MiniCheek extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 6, height: 3,
+        decoration: BoxDecoration(color: Colors.pink[200], borderRadius: BorderRadius.circular(3)),
+      );
+}
+
+/// Simple dotted border wrapper.
+class DottedBorder extends StatelessWidget {
+  const DottedBorder({super.key, required this.child, this.color = RimiColors.border, this.radius = 12});
+  final Widget child;
+  final Color color;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DottedBorderPainter(color: color, radius: radius),
+      child: ClipRRect(borderRadius: BorderRadius.circular(radius), child: child),
+    );
+  }
+}
+
+class _DottedBorderPainter extends CustomPainter {
+  _DottedBorderPainter({required this.color, required this.radius});
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+    // Draw dashed via Path metrics
+    final path = Path()..addRRect(rrect);
+    const dash = 6.0;
+    const gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final len = distance + dash > metric.length ? metric.length - distance : dash;
+        canvas.drawPath(metric.extractPath(distance, distance + len), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }
