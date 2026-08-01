@@ -1,289 +1,175 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
 import '../../../shared/models/product.dart';
 import '../../../shared/widgets/product_card.dart';
-import '../../../shared/widgets/rimi_banner_carousel.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
-    final productsAsync = ref.watch(homeProductsProvider);
-    final categoriesAsync = ref.watch(homeCategoriesProvider);
-    final name = auth.user?.displayName.split(' ').first ?? 'Moms';
-
-    return Scaffold(
-      backgroundColor: RimiColors.background,
-      body: RefreshIndicator(
-        color: RimiColors.primaryDeep,
-        onRefresh: () async {
-          ref.invalidate(homeProductsProvider);
-          ref.invalidate(homeCategoriesProvider);
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(child: _HomeHeader(name: name)),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            const SliverToBoxAdapter(
-              child: RimiBannerCarousel(
-                items: [
-                  BannerItem(
-                    title: 'Cashback weekday',
-                    subtitle: 'Belanja hari kerja, poin ekstra!',
-                    color: RimiColors.primary,
-                    icon: Icons.savings_rounded,
-                  ),
-                  BannerItem(
-                    title: 'Ajak teman',
-                    subtitle: 'Dapat 5.000 poin referral',
-                    color: Color(0xFFFFE4DE),
-                    icon: Icons.group_add_rounded,
-                  ),
-                  BannerItem(
-                    title: 'Flash herbal',
-                    subtitle: 'Diskon hingga 30%',
-                    color: Color(0xFFFFF3D6),
-                    icon: Icons.local_fire_department_rounded,
-                  ),
-                ],
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Kategori', style: RimiTypography.titleLarge),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-            SliverToBoxAdapter(
-              child: categoriesAsync.when(
-                loading: () => const SizedBox(
-                  height: 88,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-                error: (e, _) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(apiErrorMessage(e), style: RimiTypography.bodySmall),
-                ),
-                data: (cats) => SizedBox(
-                  height: 96,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: cats.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) {
-                      final c = cats[i];
-                      return _CategoryChip(name: c.name, icon: _categoryIcon(c.slug));
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(child: Text('Produk unggulan', style: RimiTypography.titleLarge)),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Lihat semua',
-                        style: RimiTypography.labelLarge.copyWith(color: RimiColors.primaryDeep),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            productsAsync.when(
-              loading: () => const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-              error: (e, _) => SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(apiErrorMessage(e)),
-                ),
-              ),
-              data: (products) => SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.68,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) {
-                      final p = products[i];
-                      return ProductCard(
-                        product: p,
-                        onTap: () => context.push('/product/${p.id}'),
-                      );
-                    },
-                    childCount: products.length,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _categoryIcon(String slug) {
-    switch (slug) {
-      case 'suplemen':
-        return Icons.medication_liquid_rounded;
-      case 'vitamin':
-        return Icons.science_rounded;
-      case 'perawatan':
-        return Icons.spa_rounded;
-      case 'snack-sehat':
-        return Icons.cookie_rounded;
-      case 'susu-olahan':
-        return Icons.local_drink_rounded;
-      case 'minuman':
-        return Icons.emoji_food_beverage_rounded;
-      default:
-        return Icons.category_rounded;
-    }
-  }
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-final homeProductsProvider = FutureProvider<List<Product>>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  final page = await api.listProducts(limit: 10);
-  return page.items;
-});
+class _HomePageState extends ConsumerState<HomePage> {
+  final _bannerController = PageController(viewportFraction: 0.92);
+  int _bannerIndex = 0;
 
-final homeCategoriesProvider = FutureProvider<List<Category>>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  return api.listCategories();
-});
-
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.name});
-  final String name;
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [RimiColors.primary, Color(0xFFE8F6FF), RimiColors.background],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      child: SafeArea(
+    final auth = ref.watch(authProvider);
+    final productsAsync = ref.watch(homeProductsProvider);
+    final name = auth.user?.displayName.split(' ').first ?? 'Bundo';
+
+    return Scaffold(
+      backgroundColor: RimiColors.background,
+      body: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Hai, $name 👋', style: RimiTypography.headlineMedium),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Si Rimi siap bantu belanja bayi hari ini',
-                        style: RimiTypography.bodySmall,
+        child: RefreshIndicator(
+          color: RimiColors.primary,
+          onRefresh: () async {
+            ref.invalidate(homeProductsProvider);
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // ---------- Top App Bar ----------
+              SliverToBoxAdapter(child: _TopAppBar()),
+              // ---------- Greeting + Mascot ----------
+              SliverToBoxAdapter(child: _GreetingRow(name: name)),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              // ---------- Search ----------
+              const SliverToBoxAdapter(child: _SearchBar()),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              // ---------- Hero Banner ----------
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 160,
+                  child: PageView(
+                    controller: _bannerController,
+                    onPageChanged: (i) => setState(() => _bannerIndex = i),
+                    children: const [
+                      _HeroBanner(
+                        badge: 'Program Spesial',
+                        title: 'Ajak Teman,\nDapat Saldo Poinku!',
+                        cta: 'Bagikan Sekarang',
+                        gradient: [RimiColors.heroStart, RimiColors.heroEnd],
+                      ),
+                      _HeroBanner(
+                        badge: 'Cashback',
+                        title: 'Belanja Weekday,\nPoin Ekstra!',
+                        cta: 'Belanja Sekarang',
+                        gradient: [Color(0xFF2ABFA4), Color(0xFF7BD8C4)],
+                      ),
+                      _HeroBanner(
+                        badge: 'Flash Sale',
+                        title: 'Diskon Herbal\nHingga 30%',
+                        cta: 'Lihat Promo',
+                        gradient: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () {},
-                  style: IconButton.styleFrom(
-                    backgroundColor: RimiColors.white,
-                    foregroundColor: RimiColors.neutral,
-                  ),
-                  icon: const Icon(Icons.notifications_none_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              readOnly: true,
-              onTap: () {},
-              decoration: InputDecoration(
-                hintText: 'Cari madu, susu, sabun bayi…',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: RimiColors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              SliverToBoxAdapter(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (i) {
+                    final active = i == _bannerIndex;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: active ? 18 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: active ? RimiColors.neutral : RimiColors.border,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+                  }),
                 ),
               ),
-            ),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+              // ---------- Produk Rimi ----------
+              SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Produk Rimi', onSeeAll: () {}),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              _ProductGrid(
+                productsAsync: productsAsync,
+                cashbackColor: RimiColors.primary,
+                take: 4,
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+              // ---------- Produk Partner ----------
+              SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Produk Partner', onSeeAll: () {}),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              _ProductGrid(
+                productsAsync: productsAsync,
+                cashbackColor: RimiColors.secondary,
+                take: 4,
+                skip: 4,
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+              // ---------- Saldo Poinku Card ----------
+              const SliverToBoxAdapter(child: _PoinkuCard()),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.name, required this.icon});
-  final String name;
-  final IconData icon;
-
+// -------------------- TOP APP BAR --------------------
+class _TopAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 84,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: RimiColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: RimiColors.border),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
+      child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: RimiColors.primary.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: RimiColors.primaryDeep, size: 22),
+          const Icon(Icons.menu_rounded, size: 26, color: RimiColors.neutral),
+          const SizedBox(width: 12),
+          Text('Rimi', style: RimiTypography.headlineLarge.copyWith(fontWeight: FontWeight.w800)),
+          const Spacer(),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.notifications_none_rounded, size: 26, color: RimiColors.neutral),
+              Positioned(
+                right: -1, top: 0,
+                child: Container(
+                  width: 8, height: 8,
+                  decoration: const BoxDecoration(color: RimiColors.error, shape: BoxShape.circle),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: RimiTypography.labelSmall,
+          const SizedBox(width: 14),
+          GestureDetector(
+            onTap: () => Navigator.of(context).pushNamed('/cart'),
+            child: const Icon(Icons.shopping_bag_outlined, size: 26, color: RimiColors.neutral),
           ),
         ],
       ),
@@ -291,8 +177,357 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-// ignore unused intl import helper for later
-final _idr = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-// silence unused for now — used in product card
-// ignore: unnecessary_statements
-void _keepIntl() => _idr;
+// -------------------- GREETING --------------------
+class _GreetingRow extends StatelessWidget {
+  const _GreetingRow({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    text: 'Halo, ',
+                    style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w500),
+                    children: [
+                      TextSpan(
+                        text: '$name!',
+                        style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text('Cari kebutuhan si kecil hari ini?', style: RimiTypography.bodyMedium),
+              ],
+            ),
+          ),
+          // Si Rimi mascot
+          Container(
+            width: 56, height: 56,
+            decoration: const BoxDecoration(color: RimiColors.primary, shape: BoxShape.circle),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  top: 8,
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned(top: 10, left: 6, child: _Dot()),
+                        Positioned(top: 10, right: 6, child: _Dot()),
+                        Positioned(top: 16, left: 4, child: _Cheek()),
+                        Positioned(top: 16, right: 4, child: _Cheek()),
+                      ],
+                    ),
+                  ),
+                ),
+                const Positioned(
+                  bottom: 4,
+                  child: Text(
+                    'Si Rimi',
+                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 3, height: 3,
+        decoration: const BoxDecoration(color: RimiColors.black, shape: BoxShape.circle),
+      );
+}
+
+class _Cheek extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 4, height: 2,
+        decoration: BoxDecoration(color: Colors.pink[200], borderRadius: BorderRadius.circular(2)),
+      );
+}
+
+// -------------------- SEARCH BAR --------------------
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: RimiColors.border),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 16),
+            const Icon(Icons.search_rounded, size: 20, color: RimiColors.neutralMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Cari sabun bayi, popok, atau mainan...',
+                style: RimiTypography.bodyMedium.copyWith(color: RimiColors.neutralMuted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------- HERO BANNER --------------------
+class _HeroBanner extends StatelessWidget {
+  const _HeroBanner({
+    required this.badge,
+    required this.title,
+    required this.cta,
+    required this.gradient,
+  });
+  final String badge;
+  final String title;
+  final String cta;
+  final List<Color> gradient;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradient,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: RimiColors.secondaryDeep,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge,
+                      style: RimiTypography.labelSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 10),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: RimiTypography.headlineSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w700, height: 1.2),
+                  ),
+                  const SizedBox(height: 10),
+                  Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {},
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Text(
+                          cta,
+                          style: RimiTypography.labelMedium.copyWith(color: RimiColors.secondaryDeep, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // decorative illustration placeholder
+            Container(
+              width: 96, height: 96,
+              alignment: Alignment.center,
+              child: const Icon(Icons.child_care_rounded, size: 56, color: Colors.white54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------- SECTION HEADER --------------------
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.onSeeAll});
+  final String title;
+  final VoidCallback? onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(title, style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w700)),
+          ),
+          TextButton(
+            onPressed: onSeeAll,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+            child: Text('Lihat Semua', style: RimiTypography.labelMedium.copyWith(color: RimiColors.secondary)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- PRODUCT GRID --------------------
+class _ProductGrid extends StatelessWidget {
+  const _ProductGrid({
+    required this.productsAsync,
+    required this.cashbackColor,
+    this.take = 4,
+    this.skip = 0,
+  });
+  final AsyncValue<List<Product>> productsAsync;
+  final Color cashbackColor;
+  final int take;
+  final int skip;
+
+  @override
+  Widget build(BuildContext context) {
+    return productsAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
+      ),
+      error: (e, _) => SliverToBoxAdapter(
+        child: Padding(padding: const EdgeInsets.all(20), child: Text(apiErrorMessage(e))),
+      ),
+      data: (all) {
+        final products = all.skip(skip).take(take).toList();
+        if (products.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(20), child: Text('Belum ada produk')),
+          );
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              childAspectRatio: 0.66,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, i) {
+                final p = products[i];
+                return ProductCard(
+                  product: p,
+                  cashbackColor: cashbackColor,
+                  onTap: () => context.push('/product/${p.id}'),
+                );
+              },
+              childCount: products.length,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// -------------------- POINKU CARD --------------------
+class _PoinkuCard extends StatelessWidget {
+  const _PoinkuCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [RimiColors.secondary, RimiColors.secondaryDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52, height: 52,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.emoji_events_rounded, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Saldo Poinku', style: RimiTypography.labelMedium.copyWith(color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text('12.500 pts', style: RimiTypography.headlineMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                  Text('Tukar hadiah menarik!', style: RimiTypography.bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.9))),
+                ],
+              ),
+            ),
+            Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {},
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Text('Redeem', style: RimiTypography.labelMedium.copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------- PROVIDERS --------------------
+final homeProductsProvider = FutureProvider<List<Product>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  final page = await api.listProducts(limit: 20);
+  return page.items;
+});
+
+final homeCategoriesProvider = FutureProvider<List<Category>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  return api.listCategories();
+});

@@ -50,22 +50,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/home',
             pageBuilder: (_, __) => const NoTransitionPage(child: HomePage()),
-            routes: [
-              GoRoute(
-                path: 'products',
-                pageBuilder: (_, __) => const NoTransitionPage(child: _AllProductsPage()),
-              ),
-            ],
           ),
-          GoRoute(path: '/cart', pageBuilder: (_, __) => const NoTransitionPage(child: CartPage())),
+          GoRoute(path: '/referral', pageBuilder: (_, __) => const NoTransitionPage(child: ReferralPage())),
           GoRoute(path: '/rewards', pageBuilder: (_, __) => const NoTransitionPage(child: RewardsPage())),
           GoRoute(path: '/profile', pageBuilder: (_, __) => const NoTransitionPage(child: ProfilePage())),
         ],
       ),
 
-      // Full-screen routes
+      // Full-screen routes (outside shell)
+      GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
       GoRoute(path: '/product/:id', builder: (_, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
-      GoRoute(path: '/referral', builder: (_, __) => const ReferralPage()),
       GoRoute(path: '/orders', builder: (_, __) => const _OrdersPlaceholder()),
       GoRoute(path: '/checkout', builder: (_, __) => const _CheckoutPlaceholder()),
     ],
@@ -79,26 +73,6 @@ class _AuthRefreshNotifier extends ChangeNotifier {
   }
   final ProviderRef _ref;
 }
-
-/// Products list page with search.
-class _AllProductsPage extends StatelessWidget {
-  const _AllProductsPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: RimiColors.background,
-      appBar: AppBar(
-        title: Text('Semua Produk', style: RimiTypography.titleLarge),
-      ),
-      body: const Center(
-        child: Text('Product grid will load here'),
-      ),
-    );
-  }
-}
-
-/// Uses ProductDetailPage from features/product/
 
 /// Placeholder orders page.
 class _OrdersPlaceholder extends StatelessWidget {
