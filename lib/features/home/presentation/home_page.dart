@@ -104,35 +104,20 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ---------- Produk Rimi ----------
-              SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Produk Rimi', onSeeAll: () {}),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
-              _ProductGrid(
-                productsAsync: productsAsync,
-                cashbackColor: RimiColors.primary,
-                take: 4,
-              ),
-
+              // ---------- Saldo Poinku Card ----------
+              const SliverToBoxAdapter(child: _PoinkuCard()),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ---------- Produk Partner ----------
+              // ---------- Semua Produk (campur) ----------
               SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Produk Partner', onSeeAll: () {}),
+                child: _SectionHeader(title: 'Semua Produk', onSeeAll: () {}),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               _ProductGrid(
                 productsAsync: productsAsync,
                 cashbackColor: RimiColors.secondary,
-                take: 4,
-                skip: 4,
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // ---------- Saldo Poinku Card ----------
-              const SliverToBoxAdapter(child: _PoinkuCard()),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
@@ -169,7 +154,7 @@ class _TopAppBar extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           GestureDetector(
-            onTap: () => Navigator.of(context).pushNamed('/cart'),
+            onTap: () => context.push('/cart'),
             child: const Icon(Icons.shopping_bag_outlined, size: 26, color: RimiColors.neutral),
           ),
         ],
@@ -210,59 +195,28 @@ class _GreetingRow extends StatelessWidget {
               ],
             ),
           ),
-          // Si Rimi mascot
+          // Si Rimi mascot (CustomPaint)
           Container(
-            width: 56, height: 56,
-            decoration: const BoxDecoration(color: RimiColors.primary, shape: BoxShape.circle),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                  top: 8,
-                  child: Container(
-                    width: 32, height: 32,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(top: 10, left: 6, child: _Dot()),
-                        Positioned(top: 10, right: 6, child: _Dot()),
-                        Positioned(top: 16, left: 4, child: _Cheek()),
-                        Positioned(top: 16, right: 4, child: _Cheek()),
-                      ],
-                    ),
-                  ),
-                ),
-                const Positioned(
-                  bottom: 4,
-                  child: Text(
-                    'Si Rimi',
-                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700),
-                  ),
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              color: RimiColors.cloud,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: RimiColors.navy.withValues(alpha: 0.10),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
+            ),
+            child: const Center(
+              child: RimiMark(size: 44),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-class _Dot extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 3, height: 3,
-        decoration: const BoxDecoration(color: RimiColors.black, shape: BoxShape.circle),
-      );
-}
-
-class _Cheek extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 4, height: 2,
-        decoration: BoxDecoration(color: Colors.pink[200], borderRadius: BorderRadius.circular(2)),
-      );
 }
 
 // -------------------- SEARCH BAR --------------------
@@ -405,18 +359,14 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// -------------------- PRODUCT GRID --------------------
+// -------------------- PRODUCT GRID (mixed) --------------------
 class _ProductGrid extends StatelessWidget {
   const _ProductGrid({
     required this.productsAsync,
     required this.cashbackColor,
-    this.take = 4,
-    this.skip = 0,
   });
   final AsyncValue<List<Product>> productsAsync;
   final Color cashbackColor;
-  final int take;
-  final int skip;
 
   @override
   Widget build(BuildContext context) {
@@ -427,8 +377,7 @@ class _ProductGrid extends StatelessWidget {
       error: (e, _) => SliverToBoxAdapter(
         child: Padding(padding: const EdgeInsets.all(20), child: Text(apiErrorMessage(e))),
       ),
-      data: (all) {
-        final products = all.skip(skip).take(take).toList();
+      data: (products) {
         if (products.isEmpty) {
           return const SliverToBoxAdapter(
             child: Padding(padding: EdgeInsets.all(20), child: Text('Belum ada produk')),

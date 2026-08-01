@@ -31,6 +31,15 @@ dev_dependencies:
   freezed: ^2.5.7
   json_serializable: ^6.8.0
   riverpod_generator: ^2.6.2
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/si_rimi.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#E3F0FB"
+  adaptive_icon_foreground: "assets/images/si_rimi.png"
 
 flutter:
   uses-material-design: true
