@@ -13,7 +13,8 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = product.name?.toString() ?? 'Produk';
     final price = product.price is int ? product.price : (product.price as num?)?.toInt() ?? 0;
-    final image = (product.images as List<dynamic>?)?.firstOrNull?.toString();
+    final images = product.images as List<dynamic>?;
+    final image = (images != null && images.isNotEmpty) ? images.first.toString() : null;
     final stock = product.stock ?? 0;
 
     return GestureDetector(

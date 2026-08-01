@@ -64,7 +64,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // Full-screen routes
-      GoRoute(path: '/product/:id', builder: (_, state) => _ProductDetailShell(id: state.pathParameters['id']!)),
+      GoRoute(path: '/product/:id', builder: (_, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
       GoRoute(path: '/referral', builder: (_, __) => const ReferralPage()),
       GoRoute(path: '/orders', builder: (_, __) => const _OrdersPlaceholder()),
       GoRoute(path: '/checkout', builder: (_, __) => const _CheckoutPlaceholder()),
@@ -98,22 +98,7 @@ class _AllProductsPage extends StatelessWidget {
   }
 }
 
-/// Product detail shell.
-class _ProductDetailShell extends StatelessWidget {
-  const _ProductDetailShell({required this.id});
-  final String id;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: RimiColors.background,
-      appBar: AppBar(title: const Text('Detail')),
-      body: Center(
-        child: Text('Product $id'),
-      ),
-    );
-  }
-}
+/// Uses ProductDetailPage from features/product/
 
 /// Placeholder orders page.
 class _OrdersPlaceholder extends StatelessWidget {

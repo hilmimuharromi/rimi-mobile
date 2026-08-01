@@ -8,6 +8,7 @@ import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
 import '../../../shared/models/user.dart';
 import '../../../shared/widgets/rimi_app_bar.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});

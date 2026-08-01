@@ -176,6 +176,59 @@ class ApiClient {
     await dio.post('/cart/items', data: {'product_id': productId, 'qty': qty});
   }
 
+  Future<void> updateCartItem({required String itemId, required int qty}) async {
+    await dio.patch('/cart/items/$itemId', data: {'qty': qty});
+  }
+
+  Future<void> removeFromCart(String itemId) async {
+    await dio.delete('/cart/items/$itemId');
+  }
+
+  // ---------- Orders ----------
+
+  Future<List<Map<String, dynamic>>> listOrders({int page = 1, int limit = 20}) async {
+    final res = await dio.get('/orders/', queryParameters: {'page': page, 'limit': limit});
+    return unwrapData(res.data, (raw) {
+      if (raw is Map) {
+        final items = raw['items'] as List? ?? [];
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
+  Future<Map<String, dynamic>> getOrder(String id) async {
+    final res = await dio.get('/orders/$id');
+    return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  Future<Map<String, dynamic>> createOrder({
+    required String addressId,
+    String? shippingOption,
+    String? notes,
+  }) async {
+    final res = await dio.post('/orders/', data: {
+      'address_id': addressId,
+      if (shippingOption != null) 'shipping_option': shippingOption,
+      if (notes != null) 'notes': notes,
+    });
+    return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  // ---------- Redemption ----------
+
+  Future<List<dynamic>> getRedemptionCatalog() async {
+    final res = await dio.get('/redemption/catalog');
+    return unwrapData(res.data, (raw) {
+      if (raw is List) return raw;
+      if (raw is Map) return raw['items'] as List? ?? raw['catalog'] as List? ?? [];
+      return <dynamic>[];
+    });
+  }
+
   // ---------- Wallet ----------
 
   Future<Map<String, dynamic>> getWallet() async {

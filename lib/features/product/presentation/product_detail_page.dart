@@ -67,18 +67,12 @@ class ProductDetailPage extends ConsumerWidget {
                       style: RimiTypography.headlineLarge.copyWith(color: RimiColors.primaryDeep),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, size: 20, color: Color(0xFFFFC24B)),
-                        const SizedBox(width: 4),
-                        Text('${product.rating} • ${product.reviews} ulasan', style: RimiTypography.bodyMedium),
-                      ],
-                    ),
+                    // rating/reviews TBD from DB
                     const SizedBox(height: 16),
                     Text('Deskripsi', style: RimiTypography.titleMedium),
                     const SizedBox(height: 8),
                     Text(
-                      product.description,
+                      product.description ?? 'Tidak ada deskripsi',
                       style: RimiTypography.bodyMedium,
                     ),
                     const SizedBox(height: 16),
@@ -96,7 +90,7 @@ class ProductDetailPage extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             onPressed: () async {
-                              await api.addToCart(productId);
+                              await api.addToCart(productId: productId);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('✅ Ditambahkan ke keranjang')),
