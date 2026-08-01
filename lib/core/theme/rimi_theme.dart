@@ -29,11 +29,11 @@ class RimiTheme {
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: RimiColors.primary,
-        foregroundColor: RimiColors.textPrimary,
+        backgroundColor: RimiColors.navy,
+        foregroundColor: RimiColors.white,
         centerTitle: false,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: RimiTypography.textTheme.headlineSmall,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        titleTextStyle: RimiTypography.textTheme.headlineSmall?.copyWith(color: RimiColors.white),
       ),
       cardTheme: CardTheme(
         color: RimiColors.surfaceCard,

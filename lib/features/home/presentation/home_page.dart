@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+import '../../../shared/widgets/rimi_mark.dart';
 import '../../../shared/models/product.dart';
 import '../../../shared/widgets/product_card.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -150,8 +151,8 @@ class _TopAppBar extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.menu_rounded, size: 26, color: RimiColors.neutral),
-          const SizedBox(width: 12),
-          Text('Rimi', style: RimiTypography.headlineLarge.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(width: 10),
+          const RimiLogoLockup(markSize: 28, fontSize: 20),
           const Spacer(),
           Stack(
             clipBehavior: Clip.none,
@@ -366,11 +367,10 @@ class _HeroBanner extends StatelessWidget {
                 ],
               ),
             ),
-            // decorative illustration placeholder
-            Container(
+            // Mascot Si Rimi
+            const SizedBox(
               width: 96, height: 96,
-              alignment: Alignment.center,
-              child: const Icon(Icons.child_care_rounded, size: 56, color: Colors.white54),
+              child: RimiMark(size: 80, showCheeks: false),
             ),
           ],
         ),

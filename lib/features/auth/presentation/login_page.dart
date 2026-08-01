@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+import '../../../shared/widgets/rimi_mark.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -50,25 +51,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 24),
-                // Mascot placeholder
+                // Mascot Si Rimi
                 Container(
                   height: 120,
                   alignment: Alignment.center,
                   child: Container(
-                    width: 96,
-                    height: 96,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: RimiColors.primary,
+                      color: RimiColors.cloud,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: RimiColors.primaryDeep.withValues(alpha: 0.25),
+                          color: RimiColors.navy.withValues(alpha: 0.15),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.child_care_rounded, size: 48, color: RimiColors.primaryDeep),
+                    child: const RimiMark(size: 72),
                   ),
                 ),
                 const SizedBox(height: 20),

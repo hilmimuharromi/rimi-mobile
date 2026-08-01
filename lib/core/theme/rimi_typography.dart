@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'rimi_colors.dart';
 
-/// Typography: Quicksand (headline) + Plus Jakarta Sans (body/label).
+/// Typography: Nunito (headline/angka/label tombol) + Plus Jakarta Sans (body/label).
 ///
 /// Exposes both a full [textTheme] and static convenience getters so widgets
 /// can write `RimiTypography.titleLarge` instead of
@@ -12,39 +12,39 @@ class RimiTypography {
   RimiTypography._();
 
   // ---------- Static convenience styles ----------
-  static TextStyle get displayLarge => GoogleFonts.quicksand(
+  static TextStyle get displayLarge => GoogleFonts.nunito(
         fontSize: 40,
         fontWeight: FontWeight.w700,
         color: RimiColors.textPrimary,
         height: 1.15,
       );
 
-  static TextStyle get displayMedium => GoogleFonts.quicksand(
+  static TextStyle get displayMedium => GoogleFonts.nunito(
         fontSize: 32,
         fontWeight: FontWeight.w700,
         color: RimiColors.textPrimary,
         height: 1.2,
       );
 
-  static TextStyle get displaySmall => GoogleFonts.quicksand(
+  static TextStyle get displaySmall => GoogleFonts.nunito(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: RimiColors.textPrimary,
       );
 
-  static TextStyle get headlineLarge => GoogleFonts.quicksand(
+  static TextStyle get headlineLarge => GoogleFonts.nunito(
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: RimiColors.textPrimary,
       );
 
-  static TextStyle get headlineMedium => GoogleFonts.quicksand(
+  static TextStyle get headlineMedium => GoogleFonts.nunito(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: RimiColors.textPrimary,
       );
 
-  static TextStyle get headlineSmall => GoogleFonts.quicksand(
+  static TextStyle get headlineSmall => GoogleFonts.nunito(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: RimiColors.textPrimary,
