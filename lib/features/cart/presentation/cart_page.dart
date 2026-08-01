@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+import '../../../shared/widgets/rimi_mark.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -79,7 +80,7 @@ class _CartPageState extends ConsumerState<CartPage> {
           icon: const Icon(Icons.arrow_back_rounded, color: RimiColors.neutral),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+        title: const RimiLogoLockup(markSize: 24, fontSize: 18),
         centerTitle: false,
         actions: [
           IconButton(

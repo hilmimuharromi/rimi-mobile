@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+import '../../../shared/widgets/rimi_mark.dart';
+import '../../../shared/providers/wallet_provider.dart';
 
 /// Live catalog from BE `/api/v1/redemption/catalog` (member auth required).
 final redemptionCatalogProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
@@ -16,32 +18,7 @@ final redemptionCatalogProvider = FutureProvider<List<Map<String, dynamic>>>((re
   }
 });
 
-/// Live wallet balance from BE `/api/v1/wallet/`.
-final walletBalanceProvider = FutureProvider<int>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  try {
-    final w = await api.getWallet();
-    final v = w['balance'];
-    if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
-  } catch (_) {
-    return 0;
-  }
-});
-
-/// Wallet transaction history.
-final walletTransactionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  try {
-    return await api.getWalletTransactions(limit: 20);
-  } catch (_) {
-    return <Map<String, dynamic>>[];
-  }
-});
-
-String _fmt(int n) =>
-    n.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+String _fmt(int n) => fmtPoints(n);
 
 class RewardsPage extends ConsumerWidget {
   const RewardsPage({super.key});
@@ -62,7 +39,7 @@ class RewardsPage extends ConsumerWidget {
           padding: EdgeInsets.only(left: 16),
           child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
         ),
-        title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+        title: const RimiLogoLockup(markSize: 24, fontSize: 18),
         centerTitle: false,
         actions: [
           IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral), onPressed: () {}),

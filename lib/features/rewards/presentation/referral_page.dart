@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+import '../../../shared/widgets/rimi_mark.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// Live downline list from BE `/api/v1/referral/downline`.
@@ -36,7 +37,7 @@ class ReferralPage extends ConsumerWidget {
           padding: EdgeInsets.only(left: 16),
           child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
         ),
-        title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
+        title: const RimiLogoLockup(markSize: 24, fontSize: 18),
         centerTitle: false,
         actions: [
           IconButton(

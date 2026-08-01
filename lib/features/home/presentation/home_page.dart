@@ -8,6 +8,7 @@ import '../../../core/theme/rimi_typography.dart';
 import '../../../shared/widgets/rimi_mark.dart';
 import '../../../shared/models/product.dart';
 import '../../../shared/widgets/product_card.dart';
+import '../../../shared/providers/wallet_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -31,6 +32,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final productsAsync = ref.watch(homeProductsProvider);
+    final balanceAsync = ref.watch(walletBalanceProvider);
     final name = auth.user?.displayName.split(' ').first ?? 'Bundo';
 
     return Scaffold(
@@ -41,6 +43,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           color: RimiColors.primary,
           onRefresh: () async {
             ref.invalidate(homeProductsProvider);
+            ref.invalidate(walletBalanceProvider);
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -105,7 +108,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // ---------- Saldo Poinku Card ----------
-              const SliverToBoxAdapter(child: _PoinkuCard()),
+              SliverToBoxAdapter(child: _PoinkuCard(balanceAsync: balanceAsync)),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // ---------- Semua Produk (campur) ----------
@@ -410,12 +413,17 @@ class _ProductGrid extends StatelessWidget {
   }
 }
 
-// -------------------- POINKU CARD --------------------
+// -------------------- POINKU CARD (live wallet) --------------------
 class _PoinkuCard extends StatelessWidget {
-  const _PoinkuCard();
+  const _PoinkuCard({required this.balanceAsync});
+  final AsyncValue<int> balanceAsync;
 
   @override
   Widget build(BuildContext context) {
+    final pts = balanceAsync.maybeWhen(
+      data: (b) => fmtPoints(b),
+      orElse: () => '...',
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -445,7 +453,7 @@ class _PoinkuCard extends StatelessWidget {
                 children: [
                   Text('Saldo Poinku', style: RimiTypography.labelMedium.copyWith(color: Colors.white)),
                   const SizedBox(height: 2),
-                  Text('12.500 pts', style: RimiTypography.headlineMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                  Text('$pts pts', style: RimiTypography.headlineMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
                   Text('Tukar hadiah menarik!', style: RimiTypography.bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.9))),
                 ],
               ),

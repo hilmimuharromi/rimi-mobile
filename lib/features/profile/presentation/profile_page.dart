@@ -19,9 +19,8 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final user = auth.user;
-    final name = user?.displayName ?? 'Bunda Kirana';
-    // fake card number derived from user id
-    final card = _fakeCardNumber(user?.id ?? 'xxxx');
+    final name = user?.displayName ?? 'Member Rimi';
+    final memberId = user?.id ?? '-';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -123,12 +122,12 @@ class ProfilePage extends ConsumerWidget {
                             style: RimiTypography.bodyMedium
                                 .copyWith(color: Colors.white, fontSize: 13)),
                         const SizedBox(height: 40),
-                        Text(card,
+                        Text('ID: $memberId',
                             style: RimiTypography.titleMedium.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
-                                letterSpacing: 2,
-                                fontSize: 16)),
+                                letterSpacing: 1,
+                                fontSize: 14)),
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -217,10 +216,6 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  String _fakeCardNumber(String seed) {
-    final h = seed.hashCode.abs().toString().padLeft(16, '0').substring(0, 16);
-    return '${h.substring(0, 4)} ${h.substring(4, 8)} ${h.substring(8, 12)} ${h.substring(12, 16)}';
-  }
 }
 
 class _OrderShortcut extends StatelessWidget {
