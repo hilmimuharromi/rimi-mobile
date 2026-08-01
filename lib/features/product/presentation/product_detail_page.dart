@@ -105,7 +105,6 @@ class ProductDetailPage extends ConsumerWidget {
                             onPressed: () => context.go('/cart'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              borderSide: const BorderSide(color: RimiColors.primaryDeep),
                             ),
                             child: const Text('Beli Sekarang'),
                           ),
@@ -116,7 +115,7 @@ class ProductDetailPage extends ConsumerWidget {
                     Text('Kategori', style: RimiTypography.titleMedium),
                     const SizedBox(height: 8),
                     Chip(
-                      label: Text(product.category?.name ?? 'Produk Lainnya'),
+                      label: Text(product.categoryId ?? 'Produk'),
                       backgroundColor: RimiColors.primary.withValues(alpha: 0.1),
                       side: const BorderSide(color: RimiColors.primary),
                       labelStyle: RimiTypography.labelMedium.copyWith(color: RimiColors.primaryDeep),

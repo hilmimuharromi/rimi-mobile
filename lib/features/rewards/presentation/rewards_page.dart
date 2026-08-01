@@ -135,8 +135,9 @@ class _CatalogTab extends ConsumerWidget {
   Future<List<Map<String, dynamic>>> _loadCatalog(ApiClient api) async {
     try {
       final result = await api.getRedemptionCatalog();
-      if (result is List) return result.cast<Map<String, dynamic>>();
-      if (result is Map) return (result['items'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      if (result is List) {
+        return result.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
       return [];
     } catch (_) {
       return [];
