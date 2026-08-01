@@ -236,10 +236,43 @@ class ApiClient {
     return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
   }
 
+  Future<List<Map<String, dynamic>>> getWalletTransactions({int page = 1, int limit = 20}) async {
+    final res = await dio.get('/wallet/transactions', queryParameters: {'page': page, 'limit': limit});
+    return unwrapData(res.data, (raw) {
+      if (raw is Map) {
+        final items = raw['items'] as List? ?? [];
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
   // ---------- Referral ----------
 
   Future<Map<String, dynamic>> getReferralCode() async {
     final res = await dio.get('/referral/code');
+    return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  Future<List<Map<String, dynamic>>> getReferralDownline({int page = 1, int limit = 20}) async {
+    final res = await dio.get('/referral/downline', queryParameters: {'page': page, 'limit': limit});
+    return unwrapData(res.data, (raw) {
+      if (raw is Map) {
+        final items = raw['items'] as List? ?? [];
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
+  Future<Map<String, dynamic>> getReferralEarnings() async {
+    final res = await dio.get('/referral/earnings');
     return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
   }
 }

@@ -16,12 +16,42 @@ final redemptionCatalogProvider = FutureProvider<List<Map<String, dynamic>>>((re
   }
 });
 
+/// Live wallet balance from BE `/api/v1/wallet/`.
+final walletBalanceProvider = FutureProvider<int>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    final w = await api.getWallet();
+    final v = w['balance'];
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  } catch (_) {
+    return 0;
+  }
+});
+
+/// Wallet transaction history.
+final walletTransactionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    return await api.getWalletTransactions(limit: 20);
+  } catch (_) {
+    return <Map<String, dynamic>>[];
+  }
+});
+
+String _fmt(int n) =>
+    n.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
+
 class RewardsPage extends ConsumerWidget {
   const RewardsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final catalogAsync = ref.watch(redemptionCatalogProvider);
+    final balanceAsync = ref.watch(walletBalanceProvider);
+    final txAsync = ref.watch(walletTransactionsProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -35,234 +65,336 @@ class RewardsPage extends ConsumerWidget {
         title: Text('Rimi', style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800)),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral), onPressed: () {}),
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // ---- Points balance card ----
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: RefreshIndicator(
+        color: RimiColors.primary,
+        onRefresh: () async {
+          ref.invalidate(walletBalanceProvider);
+          ref.invalidate(walletTransactionsProvider);
+          ref.invalidate(redemptionCatalogProvider);
+        },
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // ---- Balance card (LIVE) ----
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.gps_fixed_rounded, color: RimiColors.tertiaryDark, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('TOTAL SALDO POIN',
+                              style: RimiTypography.labelSmall.copyWith(
+                                  color: RimiColors.tertiaryDark,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                  fontSize: 11)),
+                          const SizedBox(height: 4),
+                          balanceAsync.when(
+                            loading: () => _bigText('… Poin'),
+                            error: (_, __) => _bigText('0 Poin'),
+                            data: (b) => _bigText('${_fmt(b)} Poin'),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: balanceAsync.when(
+                              loading: () => _smallText('Estimasi: —'),
+                              error: (_, __) => _smallText('Estimasi: Rp 0'),
+                              data: (b) => _smallText('Estimasi: Rp ${_fmt((b / 10).round())}'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFE5A830)),
+                  ],
+                ),
               ),
+            ),
+
+            // ---- Tukar Voucher header ----
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.gps_fixed_rounded, color: RimiColors.tertiaryDark, size: 22),
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('TOTAL SALDO POIN',
-                            style: RimiTypography.labelSmall.copyWith(
-                                color: RimiColors.tertiaryDark, fontWeight: FontWeight.w700, letterSpacing: 0.5, fontSize: 11)),
-                        const SizedBox(height: 4),
-                        Text('125.000 Poin',
-                            style: RimiTypography.headlineMedium.copyWith(
-                                color: RimiColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 22)),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text('Estimasi: Rp 12.500',
-                              style: RimiTypography.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFE5A830)),
+                      child: Text('Tukar Voucher',
+                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                  Text('Lihat Semua',
+                      style: RimiTypography.labelMedium
+                          .copyWith(color: RimiColors.primary, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 12),
 
-          // ---- Tukar Voucher ----
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Text('Tukar Voucher',
-                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                Text('Lihat Semua',
-                    style: RimiTypography.labelMedium.copyWith(color: RimiColors.primary, fontWeight: FontWeight.w700)),
-              ],
+            // ---- Voucher list (LIVE) ----
+            SizedBox(
+              height: 92,
+              child: catalogAsync.when(
+                loading: () => const Center(
+                    child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+                error: (_, __) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('Gagal memuat reward',
+                      style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+                ),
+                data: (items) {
+                  if (items.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('Belum ada voucher', style: RimiTypography.bodySmall),
+                    );
+                  }
+                  return ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (_, i) {
+                      final v = items[i];
+                      return _VoucherCard(
+                        icon: _iconFor(v['type']?.toString() ?? 'voucher'),
+                        iconBg: _bgFor(i),
+                        iconColor: _fgFor(i),
+                        label: v['name']?.toString() ?? 'Voucher',
+                        points: '${(v['points_cost'] as num?)?.toInt() ?? 0} Poin',
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 92,
-            child: catalogAsync.when(
-              loading: () => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+
+            const SizedBox(height: 24),
+
+            // ---- Hadiah Utama ----
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                      child: Text('Hadiah Utama',
+                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDF1E5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('REWARD RESELLER AKTIF',
+                        style: RimiTypography.labelSmall.copyWith(
+                            color: const Color(0xFF2D6A4F),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _PrizeCard(
+                      icon: Icons.electric_moped_rounded,
+                      badge: 'BEST VALUE',
+                      badgeColor: Color(0xFF2D6A4F),
+                      name: 'Motor Listrik',
+                      price: '2.5M Poin',
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _PrizeCard(
+                      icon: Icons.mosque_rounded,
+                      badge: 'SPIRITUAL',
+                      badgeColor: Color(0xFF8B0000),
+                      name: 'Paket Umroh',
+                      price: '5M Poin',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ---- Riwayat Poin (LIVE) ----
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                      child: Text('Riwayat Poin',
+                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
+                  const Icon(Icons.tune_rounded, size: 20, color: RimiColors.neutral),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            txAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+              ),
               error: (_, __) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Gagal memuat reward', style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+                padding: const EdgeInsets.all(16),
+                child: Text('Gagal memuat riwayat',
+                    style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
               ),
               data: (items) {
                 if (items.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('Belum ada voucher', style: RimiTypography.bodySmall),
+                    padding: const EdgeInsets.all(16),
+                    child: Text('Belum ada transaksi poin', style: RimiTypography.bodySmall),
                   );
                 }
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) {
-                    final v = items[i];
-                    return _VoucherCard(
-                      icon: _iconFor(v['type']?.toString() ?? 'voucher'),
-                      iconBg: _bgFor(i),
-                      iconColor: _fgFor(i),
-                      label: v['name']?.toString() ?? 'Voucher',
-                      points: '${(v['points_cost'] as num?)?.toInt() ?? 0} Poin',
-                    );
-                  },
-                );
+                return Column(children: items.take(8).map(_txTile).toList());
               },
             ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ---- Hadiah Utama ----
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Text('Hadiah Utama',
-                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDDF1E5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text('REWARD RESELLER AKTIF',
-                      style: RimiTypography.labelSmall.copyWith(
-                          color: const Color(0xFF2D6A4F), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _PrizeCard(
-                    icon: Icons.electric_moped_rounded,
-                    badge: 'BEST VALUE',
-                    badgeColor: Color(0xFF2D6A4F),
-                    name: 'Motor Listrik',
-                    price: '2.5M Poin',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _PrizeCard(
-                    icon: Icons.mosque_rounded,
-                    badge: 'SPIRITUAL',
-                    badgeColor: Color(0xFF8B0000),
-                    name: 'Paket Umroh',
-                    price: '5M Poin',
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ---- Riwayat Poin ----
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Text('Riwayat Poin',
-                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                const Icon(Icons.tune_rounded, size: 20, color: RimiColors.neutral),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          const _HistoryTile(
-            icon: Icons.shopping_bag_outlined,
-            iconBg: Color(0xFFF5EAD6),
-            iconColor: Color(0xFFB5883A),
-            title: 'Belanja - INV/2023/102',
-            date: '12 Okt 2023 • 14:20',
-            amount: '+1.250',
-            positive: true,
-          ),
-          const _HistoryTile(
-            icon: Icons.card_giftcard_rounded,
-            iconBg: Color(0xFFFCE4EC),
-            iconColor: Color(0xFFE91E63),
-            title: 'Tukar - Voucher Ongkir',
-            date: '10 Okt 2023 • 09:15',
-            amount: '-5.000',
-            positive: false,
-          ),
-          const _HistoryTile(
-            icon: Icons.person_add_rounded,
-            iconBg: Color(0xFFF5F5F5),
-            iconColor: Color(0xFF757575),
-            title: 'Bonus Referral - Andi S.',
-            date: '08 Okt 2023 • 18:45',
-            amount: '+5.000',
-            positive: true,
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _txTile(Map<String, dynamic> t) {
+    final type = t['type']?.toString() ?? '';
+    final amountRaw = (t['amount'] as num?)?.toInt() ?? 0;
+    // Convention: type contains 'credit' or 'debit' or specific labels
+    final isCredit = type.contains('credit') || amountRaw > 0;
+    final amount = isCredit ? amountRaw.abs() : -amountRaw.abs();
+    final title = t['description']?.toString() ?? _titleForType(type);
+    final createdAt = t['created_at']?.toString() ?? '';
+    final date = _formatDate(createdAt);
+
+    final iconData = _txIcon(type);
+    final bg = _txIconBg(type);
+    final fg = _txIconFg(type);
+    final amountText = '${amount >= 0 ? '+' : '-'}${_fmt(amount.abs())}';
+
+    return _HistoryTile(
+      icon: iconData,
+      iconBg: bg,
+      iconColor: fg,
+      title: title,
+      date: date,
+      amount: amountText,
+      positive: amount >= 0,
+    );
+  }
+
+  String _titleForType(String t) {
+    if (t.contains('cashback')) return 'Cashback Belanja';
+    if (t.contains('redemption') || t.contains('redeem')) return 'Tukar Reward';
+    if (t.contains('referral')) return 'Bonus Referral';
+    return 'Transaksi Poin';
+  }
+
+  IconData _txIcon(String t) {
+    if (t.contains('cashback') || t.contains('credit_order')) return Icons.shopping_bag_outlined;
+    if (t.contains('redemption') || t.contains('debit')) return Icons.card_giftcard_rounded;
+    if (t.contains('referral')) return Icons.person_add_rounded;
+    return Icons.stars_rounded;
+  }
+
+  Color _txIconBg(String t) {
+    if (t.contains('cashback')) return const Color(0xFFF5EAD6);
+    if (t.contains('redemption') || t.contains('debit')) return const Color(0xFFFCE4EC);
+    if (t.contains('referral')) return const Color(0xFFE8F1FD);
+    return const Color(0xFFF5F5F5);
+  }
+
+  Color _txIconFg(String t) {
+    if (t.contains('cashback')) return const Color(0xFFB5883A);
+    if (t.contains('redemption') || t.contains('debit')) return const Color(0xFFE91E63);
+    if (t.contains('referral')) return const Color(0xFF2979FF);
+    return const Color(0xFF757575);
+  }
+
+  String _formatDate(String iso) {
+    if (iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  Widget _bigText(String s) => Text(s,
+      style: RimiTypography.headlineMedium
+          .copyWith(color: RimiColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 22));
+
+  Widget _smallText(String s) =>
+      Text(s, style: RimiTypography.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600));
+
   IconData _iconFor(String type) {
     switch (type) {
-      case 'voucher': return Icons.local_offer_rounded;
-      case 'shipping': return Icons.local_shipping_rounded;
-      case 'cashback': return Icons.percent_rounded;
-      case 'product': return Icons.card_giftcard_rounded;
-      default: return Icons.card_giftcard_rounded;
+      case 'voucher':
+        return Icons.local_offer_rounded;
+      case 'shipping':
+        return Icons.local_shipping_rounded;
+      case 'cashback':
+        return Icons.percent_rounded;
+      case 'product':
+        return Icons.card_giftcard_rounded;
+      default:
+        return Icons.card_giftcard_rounded;
     }
   }
 
   Color _bgFor(int i) {
-    const palette = [Color(0xFFCFF0E8), Color(0xFFFFE59D), Color(0xFFFDCFB0), Color(0xFFE8F1FD)];
+    const palette = [
+      Color(0xFFCFF0E8),
+      Color(0xFFFFE59D),
+      Color(0xFFFDCFB0),
+      Color(0xFFE8F1FD),
+    ];
     return palette[i % palette.length];
   }
 
   Color _fgFor(int i) {
-    const palette = [RimiColors.primaryDeep, RimiColors.tertiaryDark, RimiColors.secondary, Color(0xFF2979FF)];
+    const palette = [
+      RimiColors.primaryDeep,
+      RimiColors.tertiaryDark,
+      RimiColors.secondary,
+      Color(0xFF2979FF),
+    ];
     return palette[i % palette.length];
   }
 }
@@ -284,7 +416,7 @@ class _VoucherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 150,
+      width: 160,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -306,11 +438,11 @@ class _VoucherCard extends StatelessWidget {
               children: [
                 Text(label,
                     style: RimiTypography.labelMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 12),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 Text(points,
-                    style: RimiTypography.labelSmall
-                        .copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700, fontSize: 11)),
+                    style: RimiTypography.labelSmall.copyWith(
+                        color: RimiColors.secondary, fontWeight: FontWeight.w700, fontSize: 11)),
               ],
             ),
           ),
@@ -359,11 +491,17 @@ class _PrizeCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: badgeColor,
-                    borderRadius: const BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10)),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
                   ),
                   child: Text(badge,
-                      style: RimiTypography.labelSmall
-                          .copyWith(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
+                      style: RimiTypography.labelSmall.copyWith(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3)),
                 ),
               ),
             ],
@@ -376,7 +514,8 @@ class _PrizeCard extends StatelessWidget {
                 Text(name, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
                 const SizedBox(height: 4),
                 Text(price,
-                    style: RimiTypography.labelMedium.copyWith(color: RimiColors.primaryDeep, fontWeight: FontWeight.w700)),
+                    style: RimiTypography.labelMedium
+                        .copyWith(color: RimiColors.primaryDeep, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -436,7 +575,8 @@ class _HistoryTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
+                Text(title,
+                    style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
                 const SizedBox(height: 2),
                 Text(date, style: RimiTypography.bodySmall.copyWith(fontSize: 11)),
               ],

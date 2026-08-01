@@ -2,9 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
 import '../../auth/providers/auth_provider.dart';
+
+/// Live downline list from BE `/api/v1/referral/downline`.
+final referralDownlineProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    return await api.getReferralDownline(limit: 20);
+  } catch (_) {
+    return <Map<String, dynamic>>[];
+  }
+});
 
 class ReferralPage extends ConsumerWidget {
   const ReferralPage({super.key});
@@ -12,6 +23,7 @@ class ReferralPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
+    final downlineAsync = ref.watch(referralDownlineProvider);
     final code = auth.user?.referralCode ?? 'RIMI-SAYANG-IBU';
 
     return Scaffold(
@@ -154,40 +166,44 @@ class ReferralPage extends ConsumerWidget {
                 Text('Teman Terundang',
                     style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: RimiColors.secondary,
-                    borderRadius: BorderRadius.circular(12),
+                downlineAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (list) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: RimiColors.secondary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('${list.length} Teman',
+                        style: RimiTypography.labelSmall
+                            .copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                   ),
-                  child: Text('4 Teman',
-                      style: RimiTypography.labelSmall
-                          .copyWith(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const _FriendTile(
-            name: 'Amara Khairunnisa',
-            subtitle: 'Bergabung 2 hari',
-            points: '+5.000 Pts',
-            status: 'Berhasil',
-            statusColor: RimiColors.primary,
-          ),
-          const _FriendTile(
-            name: 'Siti Rahmawati',
-            subtitle: 'Bergabung 5 hari',
-            points: '+5.000 Pts',
-            status: 'Berhasil',
-            statusColor: RimiColors.primary,
-          ),
-          const _FriendTile(
-            name: 'Dian Sastro',
-            subtitle: 'Menunggu transaksi pertama',
-            points: '--',
-            status: 'Proses',
-            statusColor: Color(0xFFFF9800),
+          downlineAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+            ),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Gagal memuat teman', style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+            ),
+            data: (list) {
+              if (list.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Belum ada teman yang bergabung',
+                      style: RimiTypography.bodySmall, textAlign: TextAlign.center),
+                );
+              }
+              return Column(children: list.map(_downlineTile).toList());
+            },
           ),
           const SizedBox(height: 8),
           Center(
@@ -249,6 +265,20 @@ class ReferralPage extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  Widget _downlineTile(Map<String, dynamic> d) {
+    final name = d['full_name']?.toString() ?? 'Member';
+    final orderCount = (d['order_count'] as num?)?.toInt() ?? 0;
+    final joined = d['joined_at']?.toString() ?? '';
+    final active = orderCount > 0;
+    return _FriendTile(
+      name: name,
+      subtitle: active ? 'Bergabung • $joined' : 'Menunggu transaksi pertama',
+      points: active ? '+5.000 Pts' : '--',
+      status: active ? 'Berhasil' : 'Proses',
+      statusColor: active ? RimiColors.primary : const Color(0xFFFF9800),
     );
   }
 }
