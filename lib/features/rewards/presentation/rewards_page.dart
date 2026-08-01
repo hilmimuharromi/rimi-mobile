@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
+
+/// Live catalog from BE `/api/v1/redemption/catalog` (member auth required).
+final redemptionCatalogProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    final raw = await api.getRedemptionCatalog();
+    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  } catch (_) {
+    return <Map<String, dynamic>>[];
+  }
+});
 
 class RewardsPage extends ConsumerWidget {
   const RewardsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final catalogAsync = ref.watch(redemptionCatalogProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -101,34 +114,36 @@ class RewardsPage extends ConsumerWidget {
           const SizedBox(height: 12),
           SizedBox(
             height: 92,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: const [
-                _VoucherCard(
-                  icon: Icons.local_shipping_rounded,
-                  iconBg: Color(0xFFCFF0E8),
-                  iconColor: RimiColors.primaryDeep,
-                  label: 'Diskon Ongkir',
-                  points: '5.000 Poin',
-                ),
-                SizedBox(width: 12),
-                _VoucherCard(
-                  icon: Icons.card_giftcard_rounded,
-                  iconBg: Color(0xFFFFE59D),
-                  iconColor: RimiColors.tertiaryDark,
-                  label: 'Potongan',
-                  points: '10.000 Poin',
-                ),
-                SizedBox(width: 12),
-                _VoucherCard(
-                  icon: Icons.percent_rounded,
-                  iconBg: Color(0xFFFDCFB0),
-                  iconColor: RimiColors.secondary,
-                  label: 'Cashback 5%',
-                  points: '3.000 Poin',
-                ),
-              ],
+            child: catalogAsync.when(
+              loading: () => const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+              error: (_, __) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('Gagal memuat reward', style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+              ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('Belum ada voucher', style: RimiTypography.bodySmall),
+                  );
+                }
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) {
+                    final v = items[i];
+                    return _VoucherCard(
+                      icon: _iconFor(v['type']?.toString() ?? 'voucher'),
+                      iconBg: _bgFor(i),
+                      iconColor: _fgFor(i),
+                      label: v['name']?.toString() ?? 'Voucher',
+                      points: '${(v['points_cost'] as num?)?.toInt() ?? 0} Poin',
+                    );
+                  },
+                );
+              },
             ),
           ),
 
@@ -229,6 +244,26 @@ class RewardsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  IconData _iconFor(String type) {
+    switch (type) {
+      case 'voucher': return Icons.local_offer_rounded;
+      case 'shipping': return Icons.local_shipping_rounded;
+      case 'cashback': return Icons.percent_rounded;
+      case 'product': return Icons.card_giftcard_rounded;
+      default: return Icons.card_giftcard_rounded;
+    }
+  }
+
+  Color _bgFor(int i) {
+    const palette = [Color(0xFFCFF0E8), Color(0xFFFFE59D), Color(0xFFFDCFB0), Color(0xFFE8F1FD)];
+    return palette[i % palette.length];
+  }
+
+  Color _fgFor(int i) {
+    const palette = [RimiColors.primaryDeep, RimiColors.tertiaryDark, RimiColors.secondary, Color(0xFF2979FF)];
+    return palette[i % palette.length];
   }
 }
 
