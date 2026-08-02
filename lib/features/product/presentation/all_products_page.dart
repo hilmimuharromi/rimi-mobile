@@ -7,7 +7,6 @@ import '../../../core/theme/rimi_colors.dart';
 import '../../../core/theme/rimi_typography.dart';
 import '../../../shared/models/product.dart';
 import '../../../shared/widgets/product_card.dart';
-import '../../../shared/widgets/rimi_mark.dart';
 
 class AllProductsPage extends ConsumerStatefulWidget {
   const AllProductsPage({super.key});
