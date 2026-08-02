@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/rimi_colors.dart';
-import '../../core/theme/rimi_typography.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../shared/widgets/shell_page.dart';
 
@@ -14,9 +12,14 @@ import '../../features/auth/presentation/register_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/product/presentation/product_detail_page.dart';
 import '../../features/cart/presentation/cart_page.dart';
+import '../../features/checkout/presentation/checkout_page.dart';
+import '../../features/orders/presentation/orders_page.dart';
+import '../../features/orders/presentation/order_detail_page.dart';
+import '../../features/address/presentation/address_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/rewards/presentation/rewards_page.dart';
 import '../../features/rewards/presentation/referral_page.dart';
+import '../../features/search/presentation/search_page.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
@@ -59,9 +62,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // Full-screen routes (outside shell)
       GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
+      GoRoute(path: '/checkout', builder: (_, __) => const CheckoutPage()),
+      GoRoute(path: '/orders', builder: (_, __) => const OrdersPage()),
+      GoRoute(path: '/orders/:id', builder: (_, state) => OrderDetailPage(orderId: state.pathParameters['id']!)),
+      GoRoute(path: '/addresses', builder: (_, __) => const AddressesPage()),
+      GoRoute(path: '/addresses/new', builder: (_, __) => const AddressFormPage()),
+      GoRoute(path: '/addresses/edit/:id', builder: (_, state) {
+        // Pass existing data via extra; form works without it too (will fetch if needed)
+        final extra = state.extra;
+        Map<String, dynamic>? existing;
+        if (extra is Map<String, dynamic>) existing = extra;
+        return AddressFormPage(addressId: state.pathParameters['id'], existing: existing);
+      }),
+      GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
       GoRoute(path: '/product/:id', builder: (_, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
-      GoRoute(path: '/orders', builder: (_, __) => const _OrdersPlaceholder()),
-      GoRoute(path: '/checkout', builder: (_, __) => const _CheckoutPlaceholder()),
     ],
   );
 });
@@ -72,34 +86,4 @@ class _AuthRefreshNotifier extends ChangeNotifier {
     _ref.listen(authProvider, (_, __) => notifyListeners());
   }
   final ProviderRef _ref;
-}
-
-/// Placeholder orders page.
-class _OrdersPlaceholder extends StatelessWidget {
-  const _OrdersPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Riwayat Pesanan')),
-      body: Center(
-        child: Text('Pesanan', style: RimiTypography.titleMedium),
-      ),
-    );
-  }
-}
-
-/// Placeholder checkout page.
-class _CheckoutPlaceholder extends StatelessWidget {
-  const _CheckoutPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
-      body: Center(
-        child: Text('Checkout', style: RimiTypography.titleMedium),
-      ),
-    );
-  }
 }

@@ -190,7 +190,7 @@ class ProfilePage extends ConsumerWidget {
               children: [
                 _MenuTile(icon: Icons.history_rounded, label: 'Riwayat Pesanan', onTap: () => context.push('/orders')),
                 _Divider(),
-                _MenuTile(icon: Icons.location_on_outlined, label: 'Daftar Alamat', onTap: () {}),
+                _MenuTile(icon: Icons.location_on_outlined, label: 'Daftar Alamat', onTap: () => context.push('/addresses')),
                 _Divider(),
                 _MenuTile(icon: Icons.favorite_border_rounded, label: 'Produk Favorit', onTap: () {}),
                 _Divider(),

@@ -230,26 +230,30 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: RimiColors.border),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 16),
-            const Icon(Icons.search_rounded, size: 20, color: RimiColors.neutralMuted),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Cari sabun bayi, popok, atau mainan...',
-                style: RimiTypography.bodyMedium.copyWith(color: RimiColors.neutralMuted),
+      child: GestureDetector(
+        onTap: () => context.push('/search'),
+        child: Container(
+          height: 46,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: RimiColors.border),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 16),
+              const Icon(Icons.search_rounded, size: 20, color: RimiColors.neutralMuted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Cari sabun bayi, popok, atau mainan...',
+                  style: RimiTypography.bodyMedium.copyWith(color: RimiColors.neutralMuted),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
       ),
     );
   }

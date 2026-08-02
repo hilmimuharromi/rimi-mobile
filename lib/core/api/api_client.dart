@@ -184,6 +184,80 @@ class ApiClient {
     await dio.delete('/cart/items/$itemId');
   }
 
+  // ---------- Addresses ----------
+
+  Future<List<Map<String, dynamic>>> listAddresses() async {
+    final res = await dio.get('/addresses');
+    return unwrapData(res.data, (raw) {
+      if (raw is Map) {
+        final items = raw['items'] as List? ?? [];
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
+  Future<Map<String, dynamic>> createAddress({
+    required String recipientName,
+    required String phone,
+    required String detail,
+    String? label,
+    String? province,
+    String? city,
+    String? district,
+    String? village,
+    String? postalCode,
+    bool isDefault = false,
+  }) async {
+    final res = await dio.post('/addresses', data: {
+      'recipient_name': recipientName,
+      'phone': phone,
+      'detail': detail,
+      if (label != null) 'label': label,
+      if (province != null) 'province': province,
+      if (city != null) 'city': city,
+      if (district != null) 'district': district,
+      if (village != null) 'village': village,
+      if (postalCode != null) 'postal_code': postalCode,
+      'is_default': isDefault,
+    });
+    return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  Future<Map<String, dynamic>> updateAddress(String id, {
+    String? recipientName,
+    String? phone,
+    String? detail,
+    String? label,
+    String? province,
+    String? city,
+    String? district,
+    String? village,
+    String? postalCode,
+    bool? isDefault,
+  }) async {
+    final res = await dio.patch('/addresses/$id', data: {
+      if (recipientName != null) 'recipient_name': recipientName,
+      if (phone != null) 'phone': phone,
+      if (detail != null) 'detail': detail,
+      if (label != null) 'label': label,
+      if (province != null) 'province': province,
+      if (city != null) 'city': city,
+      if (district != null) 'district': district,
+      if (village != null) 'village': village,
+      if (postalCode != null) 'postal_code': postalCode,
+      if (isDefault != null) 'is_default': isDefault,
+    });
+    return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  Future<void> deleteAddress(String id) async {
+    await dio.delete('/addresses/$id');
+  }
+
   // ---------- Orders ----------
 
   Future<List<Map<String, dynamic>>> listOrders({int page = 1, int limit = 20}) async {
@@ -203,6 +277,12 @@ class ApiClient {
   Future<Map<String, dynamic>> getOrder(String id) async {
     final res = await dio.get('/orders/$id');
     return unwrapData(res.data, (raw) => raw as Map<String, dynamic>? ?? {});
+  }
+
+  /// Search products — returns flat list (no pagination wrapper needed for search page).
+  Future<List<Product>> searchProducts(String query, {int limit = 20}) async {
+    final page = await listProducts(search: query, limit: limit);
+    return page.items;
   }
 
   Future<Map<String, dynamic>> createOrder({
