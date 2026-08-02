@@ -34,10 +34,10 @@ class ReferralPage extends ConsumerWidget {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
+          padding: EdgeInsets.only(left: 20),
+          child: RimiLogoLockup(markSize: 24, fontSize: 18),
         ),
-        title: const RimiLogoLockup(markSize: 24, fontSize: 18),
+        title: const SizedBox(),
         centerTitle: false,
         actions: [
           IconButton(

@@ -121,6 +121,7 @@ class ApiClient {
     int limit = 20,
     String? category,
     String? search,
+    bool? featured,
   }) async {
     final res = await dio.get(
       '/products',
@@ -129,6 +130,7 @@ class ApiClient {
         'limit': limit,
         if (category != null && category.isNotEmpty) 'category': category,
         if (search != null && search.isNotEmpty) 'search': search,
+        if (featured != null) 'featured': featured,
       },
     );
     return unwrapData(res.data, (raw) {

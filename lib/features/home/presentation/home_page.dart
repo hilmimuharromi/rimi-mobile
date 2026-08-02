@@ -111,9 +111,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverToBoxAdapter(child: _PoinkuCard(balanceAsync: balanceAsync)),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ---------- Semua Produk (campur) ----------
+              // ---------- Produk Pilihan (featured) ----------
               SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Semua Produk', onSeeAll: () {}),
+                child: _SectionHeader(title: 'Produk Pilihan', onSeeAll: () => context.push('/products')),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               _ProductGrid(
@@ -138,8 +138,7 @@ class _TopAppBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
       child: Row(
         children: [
-          const Icon(Icons.menu_rounded, size: 26, color: RimiColors.neutral),
-          const SizedBox(width: 10),
+          const SizedBox(width: 20),
           const RimiLogoLockup(markSize: 28, fontSize: 20),
           const Spacer(),
           Stack(
@@ -483,7 +482,7 @@ class _PoinkuCard extends StatelessWidget {
 // -------------------- PROVIDERS --------------------
 final homeProductsProvider = FutureProvider<List<Product>>((ref) async {
   final api = ref.watch(apiClientProvider);
-  final page = await api.listProducts(limit: 20);
+  final page = await api.listProducts(limit: 20, featured: true);
   return page.items;
 });
 

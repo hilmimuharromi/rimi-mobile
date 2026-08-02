@@ -21,3 +21,4 @@ android/local.properties
 ios/Pods/
 ios/.symlinks/
 macos/Flutter/ephemeral/
+app-release.apk

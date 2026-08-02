@@ -11,6 +11,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/product/presentation/product_detail_page.dart';
+import '../../features/product/presentation/all_products_page.dart';
 import '../../features/cart/presentation/cart_page.dart';
 import '../../features/checkout/presentation/checkout_page.dart';
 import '../../features/orders/presentation/orders_page.dart';
@@ -75,6 +76,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return AddressFormPage(addressId: state.pathParameters['id'], existing: existing);
       }),
       GoRoute(path: '/search', builder: (_, __) => const SearchPage()),
+      GoRoute(path: '/products', builder: (_, __) => const AllProductsPage()),
       GoRoute(path: '/product/:id', builder: (_, state) => ProductDetailPage(productId: state.pathParameters['id']!)),
     ],
   );

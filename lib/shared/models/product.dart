@@ -15,6 +15,7 @@ class Product extends Equatable {
     this.categoryId,
     this.supplierId,
     this.isActive = true,
+    this.isFeatured = false,
     this.weightGram,
     this.images,
   });
@@ -31,6 +32,7 @@ class Product extends Equatable {
   final String? categoryId;
   final String? supplierId;
   final bool isActive;
+  final bool isFeatured;
   final int? weightGram;
   final List<String>? images;
 
@@ -58,6 +60,7 @@ class Product extends Equatable {
       categoryId: json['category_id']?.toString(),
       supplierId: json['supplier_id']?.toString(),
       isActive: json['is_active'] as bool? ?? true,
+      isFeatured: json['is_featured'] as bool? ?? false,
       weightGram: json['weight_gram'] != null ? _asInt(json['weight_gram']) : null,
       images: images,
     );

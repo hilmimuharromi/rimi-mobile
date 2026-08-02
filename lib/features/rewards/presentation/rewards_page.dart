@@ -36,10 +36,10 @@ class RewardsPage extends ConsumerWidget {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: Icon(Icons.menu_rounded, color: RimiColors.neutral),
+          padding: EdgeInsets.only(left: 20),
+          child: RimiLogoLockup(markSize: 24, fontSize: 18),
         ),
-        title: const RimiLogoLockup(markSize: 24, fontSize: 18),
+        title: const SizedBox(),
         centerTitle: false,
         actions: [
           IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral), onPressed: () {}),
@@ -125,15 +125,12 @@ class RewardsPage extends ConsumerWidget {
                   Expanded(
                       child: Text('Tukar Voucher',
                           style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                  Text('Lihat Semua',
-                      style: RimiTypography.labelMedium
-                          .copyWith(color: RimiColors.primary, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
             const SizedBox(height: 12),
 
-            // ---- Voucher list (LIVE) ----
+            // ---- Voucher list (LIVE — filtered by type=voucher) ----
             SizedBox(
               height: 92,
               child: catalogAsync.when(
@@ -141,11 +138,13 @@ class RewardsPage extends ConsumerWidget {
                     child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
                 error: (_, __) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('Gagal memuat reward',
+                  child: Text('Gagal memuat voucher',
                       style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
                 ),
                 data: (items) {
-                  if (items.isEmpty) {
+                  final vouchers = items.where((v) =>
+                      (v['type']?.toString() ?? '').toLowerCase().contains('voucher')).toList();
+                  if (vouchers.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text('Belum ada voucher', style: RimiTypography.bodySmall),
@@ -154,10 +153,10 @@ class RewardsPage extends ConsumerWidget {
                   return ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: items.length,
+                    itemCount: vouchers.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) {
-                      final v = items[i];
+                      final v = vouchers[i];
                       return _VoucherCard(
                         icon: _iconFor(v['type']?.toString() ?? 'voucher'),
                         iconBg: _bgFor(i),
@@ -173,7 +172,7 @@ class RewardsPage extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ---- Hadiah Utama ----
+            // ---- Hadiah Utama (LIVE — filtered by type != voucher) ----
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -198,31 +197,53 @@ class RewardsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _PrizeCard(
-                      icon: Icons.electric_moped_rounded,
-                      badge: 'BEST VALUE',
-                      badgeColor: Color(0xFF2D6A4F),
-                      name: 'Motor Listrik',
-                      price: '2.5M Poin',
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _PrizeCard(
-                      icon: Icons.mosque_rounded,
-                      badge: 'SPIRITUAL',
-                      badgeColor: Color(0xFF8B0000),
-                      name: 'Paket Umroh',
-                      price: '5M Poin',
-                    ),
-                  ),
-                ],
+            catalogAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(
+                    child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
               ),
+              error: (_, __) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('Gagal memuat hadiah',
+                    style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+              ),
+              data: (items) {
+                final prizes = items.where((v) =>
+                    !(v['type']?.toString() ?? '').toLowerCase().contains('voucher')).toList();
+                if (prizes.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('Belum ada hadiah utama', style: RimiTypography.bodySmall),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: prizes.length,
+                    itemBuilder: (_, i) {
+                      final p = prizes[i];
+                      final type = p['type']?.toString() ?? 'product';
+                      final iconData = _iconFor(type);
+                      return _PrizeCard(
+                        icon: iconData,
+                        badge: type.toUpperCase(),
+                        badgeColor: _bgFor(i),
+                        name: p['name']?.toString() ?? 'Hadiah',
+                        price: '${(p['points_cost'] as num?)?.toInt() ?? 0} Poin',
+                      );
+                    },
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),
