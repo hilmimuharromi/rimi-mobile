@@ -28,8 +28,8 @@ class _RimiMarkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width / 220.0;
-    final scale = Canvas(canvas)
-      ..scale(s, s);
+    canvas.save();
+    canvas.scale(s, s);
 
     // ── Badan awan ──
     final body = Path()
@@ -39,7 +39,7 @@ class _RimiMarkPainter extends CustomPainter {
       ..arcToPoint(const Offset(172, 82), radius: const Radius.circular(46))
       ..arcToPoint(const Offset(176, 148), radius: const Radius.circular(34))
       ..close();
-    scale.drawPath(body, Paint()..color = RimiColors.cloud);
+    canvas.drawPath(body, Paint()..color = RimiColors.cloud);
 
     // ── Perut (strip bawah, di-clip ke badan) ──
     final belly = Path()
@@ -97,6 +97,7 @@ class _RimiMarkPainter extends CustomPainter {
       ..strokeWidth = 4.6
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(smile, smilePaint);
+    canvas.restore();
   }
 
   @override

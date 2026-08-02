@@ -254,7 +254,6 @@ class _SearchBar extends StatelessWidget {
           ),
         ),
       ),
-      ),
     );
   }
 }
