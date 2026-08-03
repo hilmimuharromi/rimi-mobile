@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/rimi_colors.dart';
-import '../../../core/theme/rimi_typography.dart';
-import '../../../shared/widgets/rimi_mark.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -19,254 +18,57 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final user = auth.user;
-    final name = user?.displayName ?? 'Member Rimi';
-    final memberId = user?.id ?? '-';
+    final name = user?.displayName ?? 'Bunda Kirana';
+    final memberId = user?.id ?? '8829 4410 0023 9128';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 20),
-          child: RimiLogoLockup(markSize: 24, fontSize: 18),
-        ),
-        title: const SizedBox(),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: RimiColors.neutral),
-            onPressed: () {},
-          ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral),
-                onPressed: () => context.push('/cart'),
-              ),
-              Positioned(
-                top: 8, right: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(color: RimiColors.error, shape: BoxShape.circle),
-                  child: const Text('2',
-                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+      backgroundColor: RimiColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ---------- Top App Bar ----------
+            const SliverToBoxAdapter(child: _TopBar()),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            // ---------- Member Card ----------
+            SliverToBoxAdapter(
+              child: _MemberCard(name: name, memberId: memberId),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            // ---------- Quick Stats / Order Status ----------
+            const SliverToBoxAdapter(child: _OrderStatusGrid()),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // ---------- Menu List ----------
+            SliverToBoxAdapter(child: _MenuList()),
+
+            // ---------- Logout ----------
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => _logout(context, ref),
+                    child: Text(
+                      'Keluar Akun',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: RimiColors.error,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // ---- Member Card ----
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF28B6D), Color(0xFFF9B44E)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: RimiColors.secondary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text('RIMI MEMBER CARD',
-                                style: RimiTypography.labelMedium.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
-                                    fontSize: 12)),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 12),
-                                  const SizedBox(width: 3),
-                                  Text('Gold Tier',
-                                      style: RimiTypography.labelSmall
-                                          .copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 10)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(name,
-                            style: RimiTypography.bodyMedium
-                                .copyWith(color: Colors.white, fontSize: 13)),
-                        const SizedBox(height: 40),
-                        Text('ID: $memberId',
-                            style: RimiTypography.titleMedium.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1,
-                                fontSize: 14)),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Container(
-                              width: 28, height: 20,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF0D080),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text('Valid thru 12/26',
-                                style: RimiTypography.labelSmall
-                                    .copyWith(color: Colors.white, fontSize: 11)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Si Rimi cloud in blue box
-                  Container(
-                    width: 78, height: 78,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFA8D8EA),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Container(
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      alignment: Alignment.center,
-                      child: const Text('☁', style: TextStyle(fontSize: 26)),
-                    ),
-                  ),
-                ],
-              ),
             ),
-          ),
 
-          // ---- Order Status Shortcuts ----
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: const Row(
-              children: [
-                Expanded(child: _OrderShortcut(icon: Icons.receipt_long_outlined, label: 'Perlu\nBayar')),
-                Expanded(child: _OrderShortcut(icon: Icons.inventory_2_outlined, label: 'Dikemas')),
-                Expanded(child: _OrderShortcut(icon: Icons.local_shipping_outlined, label: 'Dikirim')),
-                Expanded(child: _OrderShortcut(icon: Icons.star_border_rounded, label: 'Beri Nilai')),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ---- Menu ----
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _MenuTile(icon: Icons.history_rounded, label: 'Riwayat Pesanan', onTap: () => context.push('/orders')),
-                _Divider(),
-                _MenuTile(icon: Icons.location_on_outlined, label: 'Daftar Alamat', onTap: () => context.push('/addresses')),
-                _Divider(),
-                _MenuTile(icon: Icons.favorite_border_rounded, label: 'Produk Favorit', onTap: () {}),
-                _Divider(),
-                _MenuTile(icon: Icons.help_outline_rounded, label: 'Pusat Bantuan', onTap: () {}),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ---- Logout ----
-          Center(
-            child: TextButton(
-              onPressed: () => _logout(context, ref),
-              child: Text('Keluar Akun',
-                  style: RimiTypography.labelLarge
-                      .copyWith(color: RimiColors.secondary, fontWeight: FontWeight.w700, fontSize: 15)),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-}
-
-class _OrderShortcut extends StatelessWidget {
-  const _OrderShortcut({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 48, height: 48,
-          decoration: const BoxDecoration(color: Color(0xFFEBF4FA), shape: BoxShape.circle),
-          child: Icon(icon, color: RimiColors.secondary, size: 24),
-        ),
-        const SizedBox(height: 6),
-        Text(label,
-            textAlign: TextAlign.center,
-            style: RimiTypography.labelSmall
-                .copyWith(color: RimiColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-        child: Row(
-          children: [
-            Container(
-              width: 40, height: 40,
-              decoration: const BoxDecoration(color: Color(0xFFEBF4FA), shape: BoxShape.circle),
-              child: Icon(icon, color: RimiColors.secondary, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(label,
-                  style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w600, fontSize: 15)),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCCC)),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
       ),
@@ -274,7 +76,517 @@ class _MenuTile extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
+// -------------------- TOP BAR --------------------
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+
   @override
-  Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE), indent: 20, endIndent: 20);
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: RimiColors.background,
+        boxShadow: [
+          BoxShadow(
+            color: RimiColors.navy.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SizedBox(width: 40),
+          Text(
+            'Rimi',
+            style: GoogleFonts.quicksand(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: RimiColors.primary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined, color: RimiColors.primary, size: 24),
+                onPressed: () => context.push('/cart'),
+              ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: RimiColors.secondary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Center(
+                    child: Text('2', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- MEMBER CARD --------------------
+class _MemberCard extends StatelessWidget {
+  const _MemberCard({required this.name, required this.memberId});
+  final String name;
+  final String memberId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 208,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF8B76), Color(0xFFF9B44E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: RimiColors.coral.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Shimmer layer
+            Positioned.fill(
+              child: _ShimmerWidget(),
+            ),
+            // Decorative blur circles
+            Positioned(
+              top: -40,
+              right: -40,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -40,
+              left: -40,
+              child: Container(
+                width: 128,
+                height: 128,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row: card label + tier badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'RIMI MEMBER CARD',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            name,
+                            style: GoogleFonts.quicksand(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Glass effect tier badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star_rounded, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Gold Tier',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Bottom row: card number + chip + validity
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              memberId,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                // Chip icon
+                                Container(
+                                  width: 28,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Valid thru 12/26',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Mascot
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          color: RimiColors.cloud,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.child_care_rounded, size: 56, color: RimiColors.primary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShimmerWidget extends StatefulWidget {
+  @override
+  State<_ShimmerWidget> createState() => _ShimmerWidgetState();
+}
+
+class _ShimmerWidgetState extends State<_ShimmerWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.linear),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Transform.translate(
+            offset: Offset(_animation.value * 200, 0),
+            child: Container(
+              width: 100,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.white.withValues(alpha: 0.2),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// -------------------- ORDER STATUS GRID --------------------
+class _OrderStatusGrid extends StatelessWidget {
+  const _OrderStatusGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: RimiColors.navy.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _OrderShortcut(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Perlu\nBayar',
+              onTap: () => context.push('/orders'),
+            ),
+            _OrderShortcut(
+              icon: Icons.inventory_2_rounded,
+              label: 'Dikemas',
+              onTap: () => context.push('/orders'),
+            ),
+            _OrderShortcut(
+              icon: Icons.local_shipping_rounded,
+              label: 'Dikirim',
+              onTap: () => context.push('/orders'),
+            ),
+            _OrderShortcut(
+              icon: Icons.star_rate_rounded,
+              label: 'Beri Nilai',
+              onTap: () => context.push('/orders'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderShortcut extends StatelessWidget {
+  const _OrderShortcut({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: RimiColors.cloud.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: RimiColors.primary, size: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: RimiColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- MENU LIST --------------------
+class _MenuList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: RimiColors.navy.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            _MenuItem(
+              icon: Icons.history_rounded,
+              label: 'Riwayat Pesanan',
+              onTap: () => context.push('/orders'),
+            ),
+            _MenuDivider(),
+            _MenuItem(
+              icon: Icons.location_on_rounded,
+              label: 'Daftar Alamat',
+              onTap: () => context.push('/addresses'),
+            ),
+            _MenuDivider(),
+            _MenuItem(
+              icon: Icons.favorite_rounded,
+              label: 'Produk Favorit',
+              onTap: () {},
+            ),
+            _MenuDivider(),
+            _MenuItem(
+              icon: Icons.settings_rounded,
+              label: 'Pengaturan',
+              onTap: () {},
+            ),
+            _MenuDivider(),
+            _MenuItem(
+              icon: Icons.help_center_rounded,
+              label: 'Pusat Bantuan',
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  const _MenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, color: RimiColors.secondary, size: 22),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: RimiColors.textPrimary,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: RimiColors.border, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: RimiColors.border.withValues(alpha: 0.5),
+      indent: 16,
+      endIndent: 16,
+    );
+  }
 }
