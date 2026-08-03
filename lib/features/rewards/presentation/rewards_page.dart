@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/rimi_colors.dart';
-import '../../../core/theme/rimi_typography.dart';
-import '../../../shared/widgets/rimi_mark.dart';
 import '../../../shared/providers/wallet_provider.dart';
 
 /// Live catalog from BE `/api/v1/redemption/catalog` (member auth required).
@@ -30,339 +29,380 @@ class RewardsPage extends ConsumerWidget {
     final txAsync = ref.watch(walletTransactionsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 20),
-          child: RimiLogoLockup(markSize: 24, fontSize: 18),
+      backgroundColor: RimiColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          color: RimiColors.primary,
+          onRefresh: () async {
+            ref.invalidate(walletBalanceProvider);
+            ref.invalidate(walletTransactionsProvider);
+            ref.invalidate(redemptionCatalogProvider);
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // ---------- Top App Bar ----------
+              SliverToBoxAdapter(
+                child: _TopBar(),
+              ),
+
+              // ---------- Points Header (gold shimmer) ----------
+              SliverToBoxAdapter(
+                child: _PointsHeader(balanceAsync: balanceAsync),
+              ),
+
+              // ---------- Tukarkan Poin ----------
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Tukarkan Poin'),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              SliverToBoxAdapter(
+                child: _RedeemList(catalogAsync: catalogAsync, balanceAsync: balanceAsync),
+              ),
+
+              // ---------- Riwayat Poin ----------
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              SliverToBoxAdapter(
+                child: _HistoryHeader(),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              _TransactionList(txAsync: txAsync),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
         ),
-        title: const SizedBox(),
-        centerTitle: false,
-        actions: [
-          IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: RimiColors.neutral), onPressed: () {}),
+      ),
+    );
+  }
+}
+
+// -------------------- TOP BAR --------------------
+class _TopBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: RimiColors.background,
+        boxShadow: [
+          BoxShadow(
+            color: RimiColors.cloud.withValues(alpha: 0.5),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      body: RefreshIndicator(
-        color: RimiColors.primary,
-        onRefresh: () async {
-          ref.invalidate(walletBalanceProvider);
-          ref.invalidate(walletTransactionsProvider);
-          ref.invalidate(redemptionCatalogProvider);
-        },
-        child: ListView(
-          padding: EdgeInsets.zero,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SizedBox(width: 40),
+          Text(
+            'Rimi',
+            style: GoogleFonts.quicksand(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: RimiColors.primary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined, color: RimiColors.primary, size: 24),
+            onPressed: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- POINTS HEADER (gold shimmer card) --------------------
+class _PointsHeader extends StatelessWidget {
+  const _PointsHeader({required this.balanceAsync});
+  final AsyncValue<int> balanceAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 180),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFFC24B),
+              Color(0xFFFFD99A),
+              Color(0xFFFFC24B),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFC24B).withValues(alpha: 0.3),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
           children: [
-            // ---- Balance card (LIVE) ----
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            // Floating circles decoration
+            Positioned(
+              top: -16,
+              left: -16,
               child: Container(
-                padding: const EdgeInsets.all(20),
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.gps_fixed_rounded, color: RimiColors.tertiaryDark, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('TOTAL SALDO POIN',
-                              style: RimiTypography.labelSmall.copyWith(
-                                  color: RimiColors.tertiaryDark,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                  fontSize: 11)),
-                          const SizedBox(height: 4),
-                          balanceAsync.when(
-                            loading: () => _bigText('… Poin'),
-                            error: (_, __) => _bigText('0 Poin'),
-                            data: (b) => _bigText('${_fmt(b)} Poin'),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: balanceAsync.when(
-                              loading: () => _smallText('Estimasi: —'),
-                              error: (_, __) => _smallText('Estimasi: Rp 0'),
-                              data: (b) => _smallText('Estimasi: Rp ${_fmt((b / 10).round())}'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFE5A830)),
-                  ],
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
-
-            // ---- Tukar Voucher header ----
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: Text('Tukar Voucher',
-                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ---- Voucher list (LIVE — filtered by type=voucher) ----
-            SizedBox(
-              height: 92,
-              child: catalogAsync.when(
-                loading: () => const Center(
-                    child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
-                error: (_, __) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('Gagal memuat voucher',
-                      style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
+            Positioned(
+              bottom: -40,
+              right: -40,
+              child: Container(
+                width: 128,
+                height: 128,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
                 ),
-                data: (items) {
-                  final vouchers = items.where((v) =>
-                      (v['type']?.toString() ?? '').toLowerCase().contains('voucher')).toList();
-                  if (vouchers.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('Belum ada voucher', style: RimiTypography.bodySmall),
-                    );
-                  }
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: vouchers.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (_, i) {
-                      final v = vouchers[i];
-                      return _VoucherCard(
-                        icon: _iconFor(v['type']?.toString() ?? 'voucher'),
-                        iconBg: _bgFor(i),
-                        iconColor: _fgFor(i),
-                        label: v['name']?.toString() ?? 'Voucher',
-                        points: '${(v['points_cost'] as num?)?.toInt() ?? 0} Poin',
-                      );
-                    },
-                  );
-                },
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // ---- Hadiah Utama (LIVE — filtered by type != voucher) ----
+            // Mascot watermark
+            Positioned(
+              right: -10,
+              bottom: -20,
+              child: Icon(
+                Icons.emoji_events_rounded,
+                size: 120,
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+            // Content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: Text('Hadiah Utama',
-                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDDF1E5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text('REWARD RESELLER AKTIF',
-                        style: RimiTypography.labelSmall.copyWith(
-                            color: const Color(0xFF2D6A4F),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.3)),
-                  ),
-                ],
+              padding: const EdgeInsets.all(24),
+              child: balanceAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                error: (_, __) => _content(0),
+                data: (b) => _content(b),
               ),
             ),
-            const SizedBox(height: 12),
-            catalogAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(
-                    child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
-              ),
-              error: (_, __) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Gagal memuat hadiah',
-                    style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
-              ),
-              data: (items) {
-                final prizes = items.where((v) =>
-                    !(v['type']?.toString() ?? '').toLowerCase().contains('voucher')).toList();
-                if (prizes.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('Belum ada hadiah utama', style: RimiTypography.bodySmall),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.85,
-                    ),
-                    itemCount: prizes.length,
-                    itemBuilder: (_, i) {
-                      final p = prizes[i];
-                      final type = p['type']?.toString() ?? 'product';
-                      final iconData = _iconFor(type);
-                      return _PrizeCard(
-                        icon: iconData,
-                        badge: type.toUpperCase(),
-                        badgeColor: _bgFor(i),
-                        name: p['name']?.toString() ?? 'Hadiah',
-                        price: '${(p['points_cost'] as num?)?.toInt() ?? 0} Poin',
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // ---- Riwayat Poin (LIVE) ----
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: Text('Riwayat Poin',
-                          style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800))),
-                  const Icon(Icons.tune_rounded, size: 20, color: RimiColors.neutral),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            txAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(
-                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-              ),
-              error: (_, __) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Gagal memuat riwayat',
-                    style: RimiTypography.bodySmall.copyWith(color: RimiColors.error)),
-              ),
-              data: (items) {
-                if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text('Belum ada transaksi poin', style: RimiTypography.bodySmall),
-                  );
-                }
-                return Column(children: items.take(8).map(_txTile).toList());
-              },
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _txTile(Map<String, dynamic> t) {
-    final type = t['type']?.toString() ?? '';
-    final amountRaw = (t['amount'] as num?)?.toInt() ?? 0;
-    // Convention: type contains 'credit' or 'debit' or specific labels
-    final isCredit = type.contains('credit') || amountRaw > 0;
-    final amount = isCredit ? amountRaw.abs() : -amountRaw.abs();
-    final title = t['description']?.toString() ?? _titleForType(type);
-    final createdAt = t['created_at']?.toString() ?? '';
-    final date = _formatDate(createdAt);
+  Widget _content(int balance) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.star_rounded, color: Color(0xFF5E4200), size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'TOTAL SALDO POIN',
+              style: GoogleFonts.quicksand(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF5E4200).withValues(alpha: 0.8),
+                letterSpacing: 2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${_fmt(balance)} Poin',
+          style: GoogleFonts.quicksand(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            color: const Color(0xFF5E4200),
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            'Estimasi: Rp ${_fmt((balance / 10).round())}',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF5E4200),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-    final iconData = _txIcon(type);
-    final bg = _txIconBg(type);
-    final fg = _txIconFg(type);
-    final amountText = '${amount >= 0 ? '+' : '-'}${_fmt(amount.abs())}';
+// -------------------- SECTION HEADER --------------------
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
 
-    return _HistoryTile(
-      icon: iconData,
-      iconBg: bg,
-      iconColor: fg,
-      title: title,
-      date: date,
-      amount: amountText,
-      positive: amount >= 0,
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.quicksand(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: RimiColors.textPrimary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {},
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+            child: Text(
+              'Lihat Semua',
+              style: GoogleFonts.quicksand(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: RimiColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- REDEEM LIST (vertical) --------------------
+class _RedeemList extends StatelessWidget {
+  const _RedeemList({required this.catalogAsync, required this.balanceAsync});
+  final AsyncValue<List<Map<String, dynamic>>> catalogAsync;
+  final AsyncValue<int> balanceAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return catalogAsync.when(
+      loading: () => const Center(
+        child: Padding(padding: EdgeInsets.all(24), child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+      ),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text('Gagal memuat katalog', style: GoogleFonts.plusJakartaSans(color: RimiColors.error, fontSize: 14)),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Belum ada hadiah tersedia', style: GoogleFonts.plusJakartaSans(color: RimiColors.textSecondary, fontSize: 14)),
+          );
+        }
+        final balance = balanceAsync.maybeWhen(data: (b) => b, orElse: () => 0);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: items.map((item) => _RedeemItem(item: item, balance: balance)).toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RedeemItem extends StatelessWidget {
+  const _RedeemItem({required this.item, required this.balance});
+  final Map<String, dynamic> item;
+  final int balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item['name']?.toString() ?? 'Hadiah';
+    final cost = (item['points_cost'] as num?)?.toInt() ?? 0;
+    final type = item['type']?.toString() ?? 'product';
+    final canAfford = balance >= cost;
+
+    final iconData = _iconFor(type);
+    final iconBg = canAfford ? const Color(0xFFFFEDEA) : const Color(0xFFFFD99A);
+    final iconColor = canAfford ? RimiColors.secondary : RimiColors.tertiary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: RimiColors.border, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: RimiColors.cloud.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(iconData, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: RimiColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$cost Poin',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: canAfford ? RimiColors.secondary : RimiColors.tertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _RedeemButton(canAfford: canAfford),
+        ],
+      ),
     );
   }
 
-  String _titleForType(String t) {
-    if (t.contains('cashback')) return 'Cashback Belanja';
-    if (t.contains('redemption') || t.contains('redeem')) return 'Tukar Reward';
-    if (t.contains('referral')) return 'Bonus Referral';
-    return 'Transaksi Poin';
-  }
-
-  IconData _txIcon(String t) {
-    if (t.contains('cashback') || t.contains('credit_order')) return Icons.shopping_bag_outlined;
-    if (t.contains('redemption') || t.contains('debit')) return Icons.card_giftcard_rounded;
-    if (t.contains('referral')) return Icons.person_add_rounded;
-    return Icons.stars_rounded;
-  }
-
-  Color _txIconBg(String t) {
-    if (t.contains('cashback')) return const Color(0xFFF5EAD6);
-    if (t.contains('redemption') || t.contains('debit')) return const Color(0xFFFCE4EC);
-    if (t.contains('referral')) return const Color(0xFFE8F1FD);
-    return const Color(0xFFF5F5F5);
-  }
-
-  Color _txIconFg(String t) {
-    if (t.contains('cashback')) return const Color(0xFFB5883A);
-    if (t.contains('redemption') || t.contains('debit')) return const Color(0xFFE91E63);
-    if (t.contains('referral')) return const Color(0xFF2979FF);
-    return const Color(0xFF757575);
-  }
-
-  String _formatDate(String iso) {
-    if (iso.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-      return '${dt.day} ${months[dt.month - 1]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  Widget _bigText(String s) => Text(s,
-      style: RimiTypography.headlineMedium
-          .copyWith(color: RimiColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 22));
-
-  Widget _smallText(String s) =>
-      Text(s, style: RimiTypography.labelSmall.copyWith(fontSize: 11, fontWeight: FontWeight.w600));
-
   IconData _iconFor(String type) {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'voucher':
         return Icons.local_offer_rounded;
       case 'shipping':
@@ -375,217 +415,219 @@ class RewardsPage extends ConsumerWidget {
         return Icons.card_giftcard_rounded;
     }
   }
-
-  Color _bgFor(int i) {
-    const palette = [
-      Color(0xFFCFF0E8),
-      Color(0xFFFFE59D),
-      Color(0xFFFDCFB0),
-      Color(0xFFE8F1FD),
-    ];
-    return palette[i % palette.length];
-  }
-
-  Color _fgFor(int i) {
-    const palette = [
-      RimiColors.primaryDeep,
-      RimiColors.tertiaryDark,
-      RimiColors.secondary,
-      Color(0xFF2979FF),
-    ];
-    return palette[i % palette.length];
-  }
 }
 
-class _VoucherCard extends StatelessWidget {
-  const _VoucherCard({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.label,
-    required this.points,
-  });
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String label;
-  final String points;
+class _RedeemButton extends StatelessWidget {
+  const _RedeemButton({required this.canAfford});
+  final bool canAfford;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 160,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: RimiColors.border),
+        color: canAfford ? RimiColors.coral : RimiColors.cloud,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(label,
-                    style: RimiTypography.labelMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 12),
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(points,
-                    style: RimiTypography.labelSmall.copyWith(
-                        color: RimiColors.secondary, fontWeight: FontWeight.w700, fontSize: 11)),
-              ],
-            ),
-          ),
-        ],
+      child: Text(
+        canAfford ? 'Tukar' : 'Belum Cukup',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: canAfford ? Colors.white : RimiColors.neutralMuted,
+        ),
       ),
     );
   }
 }
 
-class _PrizeCard extends StatelessWidget {
-  const _PrizeCard({
-    required this.icon,
-    required this.badge,
-    required this.badgeColor,
-    required this.name,
-    required this.price,
-  });
-  final IconData icon;
-  final String badge;
-  final Color badgeColor;
-  final String name;
-  final String price;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: RimiColors.border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 100,
-                color: const Color(0xFFF7F7F7),
-                child: Center(child: Icon(icon, size: 56, color: RimiColors.neutralSoft)),
-              ),
-              Positioned(
-                top: 8, left: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  child: Text(badge,
-                      style: RimiTypography.labelSmall.copyWith(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.3)),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
-                const SizedBox(height: 4),
-                Text(price,
-                    style: RimiTypography.labelMedium
-                        .copyWith(color: RimiColors.primaryDeep, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: null,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFF5F5F5),
-                      disabledBackgroundColor: const Color(0xFFF5F5F5),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    ),
-                    child: Text('Belum Cukup',
-                        style: RimiTypography.labelMedium
-                            .copyWith(color: RimiColors.neutralSoft, fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    required this.date,
-    required this.amount,
-    required this.positive,
-  });
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String date;
-  final String amount;
-  final bool positive;
-
+// -------------------- HISTORY HEADER --------------------
+class _HistoryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Riwayat Poin',
+              style: GoogleFonts.quicksand(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: RimiColors.textPrimary,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune_rounded, size: 20, color: RimiColors.neutralMuted),
+            onPressed: () {},
+            style: IconButton.styleFrom(
+              backgroundColor: RimiColors.surface,
+              shape: const CircleBorder(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------- TRANSACTION LIST --------------------
+class _TransactionList extends StatelessWidget {
+  const _TransactionList({required this.txAsync});
+  final AsyncValue<List<Map<String, dynamic>>> txAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return txAsync.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Padding(padding: EdgeInsets.all(24), child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))),
+      ),
+      error: (_, __) => const SliverToBoxAdapter(
+        child: Padding(padding: EdgeInsets.all(16), child: Text('Gagal memuat riwayat')),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(16), child: Text('Belum ada transaksi poin')),
+          );
+        }
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, i) => _TxTile(tx: items[i]),
+              childCount: items.length > 10 ? 10 : items.length,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TxTile extends StatelessWidget {
+  const _TxTile({required this.tx});
+  final Map<String, dynamic> tx;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = tx['type']?.toString() ?? '';
+    final amountRaw = (tx['amount'] as num?)?.toInt() ?? 0;
+    final isCredit = type.contains('credit') || amountRaw > 0;
+    final amount = isCredit ? amountRaw.abs() : -amountRaw.abs();
+    final title = tx['description']?.toString() ?? _titleForType(type);
+    final createdAt = tx['created_at']?.toString() ?? '';
+    final date = _formatDate(createdAt);
+
+    final iconData = _txIcon(type);
+    final bg = _txIconBg(type);
+    final fg = _txIconFg(type);
+    final amountText = '${amount >= 0 ? '+' : '-'}${_fmt(amount.abs())}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: RimiColors.border, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: RimiColors.cloud.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 20),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(iconData, color: fg, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: RimiTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), maxLines: 1),
+                Text(
+                  title,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: RimiColors.primary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
-                Text(date, style: RimiTypography.bodySmall.copyWith(fontSize: 11)),
+                Text(
+                  date,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: RimiColors.neutralMuted,
+                  ),
+                ),
               ],
             ),
           ),
-          Text(amount,
-              style: RimiTypography.labelLarge.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: positive ? const Color(0xFF2D6A4F) : const Color(0xFFE53935))),
+          Text(
+            amountText,
+            style: GoogleFonts.quicksand(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: amount >= 0 ? const Color(0xFF2D6A4F) : RimiColors.secondary,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  String _titleForType(String t) {
+    if (t.contains('cashback')) return 'Cashback Belanja';
+    if (t.contains('redemption') || t.contains('redeem')) return 'Tukar Reward';
+    if (t.contains('referral')) return 'Bonus Referral';
+    return 'Transaksi Poin';
+  }
+
+  IconData _txIcon(String t) {
+    if (t.contains('cashback') || t.contains('credit_order')) return Icons.add_shopping_cart_rounded;
+    if (t.contains('redemption') || t.contains('debit')) return Icons.redeem_rounded;
+    if (t.contains('referral')) return Icons.group_rounded;
+    return Icons.star_rounded;
+  }
+
+  Color _txIconBg(String t) {
+    if (t.contains('cashback') || t.contains('credit_order')) return RimiColors.cloud;
+    if (t.contains('redemption') || t.contains('debit')) return const Color(0xFFFFEDEA);
+    if (t.contains('referral')) return const Color(0xFFFFD99A);
+    return const Color(0xFFF5F5F5);
+  }
+
+  Color _txIconFg(String t) {
+    if (t.contains('cashback') || t.contains('credit_order')) return RimiColors.primary;
+    if (t.contains('redemption') || t.contains('debit')) return RimiColors.secondary;
+    if (t.contains('referral')) return RimiColors.tertiary;
+    return RimiColors.neutralMuted;
+  }
+
+  String _formatDate(String iso) {
+    if (iso.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
   }
 }
