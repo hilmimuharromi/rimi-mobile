@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/rimi_colors.dart';
 import '../../core/theme/rimi_typography.dart';
@@ -126,20 +127,20 @@ class ProductCard extends StatelessWidget {
                     name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: RimiTypography.bodySmall.copyWith(
+                    style: GoogleFonts.plusJakartaSans(
                       color: RimiColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     priceStr,
-                    style: RimiTypography.titleSmall.copyWith(
+                    style: GoogleFonts.quicksand(
                       color: RimiColors.secondary,
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -149,18 +150,29 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(width: 2),
                       Text(
                         '$rating',
-                        style: RimiTypography.labelSmall.copyWith(fontSize: 10),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: RimiColors.textMuted,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '|',
-                        style: RimiTypography.labelSmall.copyWith(fontSize: 10, color: RimiColors.border),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          color: RimiColors.border,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           '$sold terjual',
-                          style: RimiTypography.labelSmall.copyWith(fontSize: 10),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: RimiColors.textMuted,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

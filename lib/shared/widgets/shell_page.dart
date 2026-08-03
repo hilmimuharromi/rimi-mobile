@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/rimi_colors.dart';
 
@@ -36,10 +37,11 @@ class _ShellPageState extends ConsumerState<ShellPage> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 20,
+              color: RimiColors.navy.withValues(alpha: 0.08),
+              blurRadius: 15,
               offset: const Offset(0, -4),
             ),
           ],
@@ -53,20 +55,20 @@ class _ShellPageState extends ConsumerState<ShellPage> {
               children: List.generate(_tabs.length, (i) {
                 final t = _tabs[i];
                 final active = i == _index;
-                final color = active ? RimiColors.secondary : RimiColors.navInactive;
+                final color = active ? RimiColors.primary : RimiColors.navInactive;
                 return Expanded(
                   child: InkWell(
                     onTap: () => _onTap(i),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(t.icon, color: color, size: 24),
+                        Icon(t.icon, color: color, size: 24, fill: active ? 1.0 : 0.0),
                         const SizedBox(height: 4),
                         Text(
                           t.label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          style: GoogleFonts.quicksand(
+                            fontSize: 12,
+                            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                             color: color,
                           ),
                         ),
