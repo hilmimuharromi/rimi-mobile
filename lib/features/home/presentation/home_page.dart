@@ -29,83 +29,38 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final auth = ref.watch(authProvider);
-    final productsAsync = ref.watch(homeProductsProvider);
-    final balanceAsync = ref.watch(walletBalanceProvider);
-    final name = auth.user?.displayName.split(' ').first ?? 'Bundo';
+    Widget build(BuildContext context) {
+      final auth = ref.watch(authProvider);
+      final productsAsync = ref.watch(homeProductsProvider);
+      final balanceAsync = ref.watch(walletBalanceProvider);
+      final bannersAsync = ref.watch(homeBannersProvider);
+      final name = auth.user?.displayName.split(' ').first ?? 'Bundo';
 
-    return Scaffold(
-      backgroundColor: RimiColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          color: RimiColors.primary,
-          onRefresh: () async {
-            ref.invalidate(homeProductsProvider);
-            ref.invalidate(walletBalanceProvider);
-          },
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // ---------- Top App Bar ----------
-              SliverToBoxAdapter(child: _TopAppBar()),
-              // ---------- Greeting + Mascot ----------
-              SliverToBoxAdapter(child: _GreetingRow(name: name)),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              // ---------- Search ----------
-              const SliverToBoxAdapter(child: _SearchBar()),
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-              // ---------- Hero Banner ----------
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 160,
-                  child: PageView(
-                    controller: _bannerController,
-                    onPageChanged: (i) => setState(() => _bannerIndex = i),
-                    children: const [
-                      _HeroBanner(
-                        badge: 'Program Spesial',
-                        title: 'Ajak Teman,\nDapat Saldo Poinku!',
-                        cta: 'Bagikan Sekarang',
-                        gradient: [RimiColors.heroStart, RimiColors.heroEnd],
-                      ),
-                      _HeroBanner(
-                        badge: 'Cashback',
-                        title: 'Belanja Weekday,\nPoin Ekstra!',
-                        cta: 'Belanja Sekarang',
-                        gradient: [Color(0xFF2ABFA4), Color(0xFF7BD8C4)],
-                      ),
-                      _HeroBanner(
-                        badge: 'Flash Sale',
-                        title: 'Diskon Herbal\nHingga 30%',
-                        cta: 'Lihat Promo',
-                        gradient: [Color(0xFFFFC24B), Color(0xFFFFE59D)],
-                      ),
-                    ],
-                  ),
+      return Scaffold(
+        backgroundColor: RimiColors.background,
+        body: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            color: RimiColors.primary,
+            onRefresh: () async {
+              ref.invalidate(homeProductsProvider);
+              ref.invalidate(walletBalanceProvider);
+              ref.invalidate(homeBannersProvider);
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // ---------- Header (logo + greeting + actions) ----------
+                SliverToBoxAdapter(child: _Header(name: name)),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                // ---------- Search ----------
+                const SliverToBoxAdapter(child: _SearchBar()),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                // ---------- Hero Banner (from BE, fallback to default) ----------
+                SliverToBoxAdapter(
+                  child: _BannerCarousel(bannersAsync: bannersAsync),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
-              SliverToBoxAdapter(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (i) {
-                    final active = i == _bannerIndex;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 18 : 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: active ? RimiColors.neutral : RimiColors.border,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // ---------- Saldo Poinku Card ----------
               SliverToBoxAdapter(child: _PoinkuCard(balanceAsync: balanceAsync)),
@@ -130,17 +85,63 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// -------------------- TOP APP BAR --------------------
-class _TopAppBar extends StatelessWidget {
+// -------------------- HEADER (logo + greeting + actions) --------------------
+class _Header extends StatelessWidget {
+  const _Header({required this.name});
+  final String name;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(20, 12, 12, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(width: 20),
-          const RimiLogoLockup(markSize: 28, fontSize: 20),
-          const Spacer(),
+          // Mascot avatar bubble
+          Container(
+            width: 52, height: 52,
+            decoration: BoxDecoration(
+              color: RimiColors.cloud,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: RimiColors.navy.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Center(child: RimiMark(size: 38)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    text: 'Halo, ',
+                    style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w600),
+                    children: [
+                      TextSpan(
+                        text: '$name! 👋',
+                        style: RimiTypography.titleLarge.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Selamat belanja kebutuhan si kecil',
+                  style: RimiTypography.bodySmall.copyWith(color: RimiColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Actions: bell + cart
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -158,62 +159,6 @@ class _TopAppBar extends StatelessWidget {
           GestureDetector(
             onTap: () => context.push('/cart'),
             child: const Icon(Icons.shopping_bag_outlined, size: 26, color: RimiColors.neutral),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// -------------------- GREETING --------------------
-class _GreetingRow extends StatelessWidget {
-  const _GreetingRow({required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    text: 'Halo, ',
-                    style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w500),
-                    children: [
-                      TextSpan(
-                        text: '$name!',
-                        style: RimiTypography.headlineMedium.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text('Cari kebutuhan si kecil hari ini?', style: RimiTypography.bodyMedium),
-              ],
-            ),
-          ),
-          // Si Rimi mascot (CustomPaint)
-          Container(
-            width: 64, height: 64,
-            decoration: BoxDecoration(
-              color: RimiColors.cloud,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: RimiColors.navy.withValues(alpha: 0.10),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: RimiMark(size: 44),
-            ),
           ),
         ],
       ),

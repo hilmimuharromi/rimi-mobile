@@ -186,6 +186,24 @@ class ApiClient {
     await dio.delete('/cart/items/$itemId');
   }
 
+  // ---------- Banners ----------
+
+  /// Public home banners from BE `/api/v1/banners?position=home`.
+  /// Returns list of banner items [{id, title, image_url, link_url, ...}].
+  Future<List<Map<String, dynamic>>> listBanners({String position = 'home'}) async {
+    final res = await dio.get('/banners', queryParameters: {'position': position});
+    return unwrapData(res.data, (raw) {
+      if (raw is Map) {
+        final items = raw['items'] as List? ?? [];
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return <Map<String, dynamic>>[];
+    });
+  }
+
   // ---------- Addresses ----------
 
   Future<List<Map<String, dynamic>>> listAddresses() async {
